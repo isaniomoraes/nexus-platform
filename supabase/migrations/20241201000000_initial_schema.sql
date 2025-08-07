@@ -110,146 +110,88 @@ ALTER TABLE workflows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE exceptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
 
--- Helper function to get user role and client_id from auth.users
-CREATE OR REPLACE FUNCTION auth.user_role()
-RETURNS user_role AS $$
+-- Helper function to extract user role from JWT (avoids recursion)
+CREATE OR REPLACE FUNCTION get_jwt_role()
+RETURNS TEXT AS $$
 BEGIN
-    RETURN (auth.jwt()->>'role')::user_role;
+  RETURN COALESCE(auth.jwt() ->> 'user_role', 'client');
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION auth.user_client_id()
+-- Helper function to extract client_id from JWT
+CREATE OR REPLACE FUNCTION get_jwt_client_id()
 RETURNS UUID AS $$
 BEGIN
-    RETURN (auth.jwt()->>'client_id')::UUID;
+  RETURN (auth.jwt() ->> 'client_id')::UUID;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
--- RLS Policies for clients table
-CREATE POLICY "Admins can view all clients" ON clients
-    FOR SELECT USING (auth.user_role() = 'admin');
+-- Helper function to extract assigned_clients from JWT
+CREATE OR REPLACE FUNCTION get_jwt_assigned_clients()
+RETURNS UUID[] AS $$
+BEGIN
+  -- Parse JSON array from JWT into UUID array
+  RETURN ARRAY(SELECT (jsonb_array_elements_text((auth.jwt() ->> 'assigned_clients')::jsonb))::UUID);
+EXCEPTION WHEN OTHERS THEN
+  RETURN ARRAY[]::UUID[];
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
-CREATE POLICY "SEs can view assigned clients" ON clients
-    FOR SELECT USING (
-        auth.user_role() = 'se' AND
-        id = ANY((
-            SELECT assigned_clients FROM users
-            WHERE id = auth.uid() AND role = 'se'
-        ))
-    );
+-- RLS Policies using JWT claims (no recursion)
 
-CREATE POLICY "Clients can view own client" ON clients
-    FOR SELECT USING (
-        auth.user_role() = 'client' AND
-        id = auth.user_client_id()
-    );
-
-CREATE POLICY "Admins can manage all clients" ON clients
-    FOR ALL USING (auth.user_role() = 'admin');
-
--- RLS Policies for users table
-CREATE POLICY "Admins can view all users" ON users
-    FOR SELECT USING (auth.user_role() = 'admin');
-
-CREATE POLICY "SEs can view users from assigned clients" ON users
-    FOR SELECT USING (
-        auth.user_role() = 'se' AND
-        (client_id = ANY((
-            SELECT assigned_clients FROM users
-            WHERE id = auth.uid() AND role = 'se'
-        )) OR client_id IS NULL)
-    );
-
-CREATE POLICY "Clients can view users from same client" ON users
-    FOR SELECT USING (
-        auth.user_role() = 'client' AND
-        client_id = auth.user_client_id()
-    );
-
-CREATE POLICY "Users can view own record" ON users
-    FOR SELECT USING (id = auth.uid());
-
-CREATE POLICY "Admins can manage all users" ON users
-    FOR ALL USING (auth.user_role() = 'admin');
-
--- RLS Policies for workflows table
-CREATE POLICY "Admins can view all workflows" ON workflows
-    FOR SELECT USING (auth.user_role() = 'admin');
-
-CREATE POLICY "SEs can view workflows from assigned clients" ON workflows
-    FOR SELECT USING (
-        auth.user_role() = 'se' AND
-        client_id = ANY((
-            SELECT assigned_clients FROM users
-            WHERE id = auth.uid() AND role = 'se'
-        ))
-    );
-
-CREATE POLICY "Clients can view own workflows" ON workflows
-    FOR SELECT USING (
-        auth.user_role() = 'client' AND
-        client_id = auth.user_client_id()
-    );
-
-CREATE POLICY "Admins and SEs can manage workflows" ON workflows
+-- Clients table policies
+CREATE POLICY "clients_access_policy" ON clients
     FOR ALL USING (
-        auth.user_role() IN ('admin', 'se') AND
-        (auth.user_role() = 'admin' OR client_id = ANY((
-            SELECT assigned_clients FROM users
-            WHERE id = auth.uid() AND role = 'se'
-        )))
+        get_jwt_role() = 'admin'
+        OR
+        (get_jwt_role() = 'se' AND clients.id = ANY(get_jwt_assigned_clients()))
+        OR
+        (get_jwt_role() = 'client' AND clients.id = get_jwt_client_id())
     );
 
--- RLS Policies for exceptions table
-CREATE POLICY "Admins can view all exceptions" ON exceptions
-    FOR SELECT USING (auth.user_role() = 'admin');
-
-CREATE POLICY "SEs can view exceptions from assigned clients" ON exceptions
-    FOR SELECT USING (
-        auth.user_role() = 'se' AND
-        client_id = ANY((
-            SELECT assigned_clients FROM users
-            WHERE id = auth.uid() AND role = 'se'
-        ))
-    );
-
-CREATE POLICY "Clients can view own exceptions" ON exceptions
-    FOR SELECT USING (
-        auth.user_role() = 'client' AND
-        client_id = auth.user_client_id()
-    );
-
-CREATE POLICY "Admins and SEs can manage exceptions" ON exceptions
+-- Users table policies (no self-reference)
+CREATE POLICY "users_access_policy" ON users
     FOR ALL USING (
-        auth.user_role() IN ('admin', 'se') AND
-        (auth.user_role() = 'admin' OR client_id = ANY((
-            SELECT assigned_clients FROM users
-            WHERE id = auth.uid() AND role = 'se'
-        )))
+        -- Users can always access their own record
+        id = auth.uid()
+        OR
+        -- Admin can access all
+        get_jwt_role() = 'admin'
+        OR
+        -- SE can access users from assigned clients
+        (get_jwt_role() = 'se' AND (users.client_id = ANY(get_jwt_assigned_clients()) OR users.client_id IS NULL))
+        OR
+        -- Client can access users from same client
+        (get_jwt_role() = 'client' AND users.client_id = get_jwt_client_id())
     );
 
--- RLS Policies for subscriptions table
-CREATE POLICY "Admins can view all subscriptions" ON subscriptions
-    FOR SELECT USING (auth.user_role() = 'admin');
-
-CREATE POLICY "SEs can view subscriptions from assigned clients" ON subscriptions
-    FOR SELECT USING (
-        auth.user_role() = 'se' AND
-        client_id = ANY((
-            SELECT assigned_clients FROM users
-            WHERE id = auth.uid() AND role = 'se'
-        ))
+-- Workflows table policies
+CREATE POLICY "workflows_access_policy" ON workflows
+    FOR ALL USING (
+        get_jwt_role() = 'admin'
+        OR
+        (get_jwt_role() = 'se' AND workflows.client_id = ANY(get_jwt_assigned_clients()))
+        OR
+        (get_jwt_role() = 'client' AND workflows.client_id = get_jwt_client_id())
     );
 
-CREATE POLICY "Billing admins can view own subscription" ON subscriptions
-    FOR SELECT USING (
-        auth.user_role() = 'client' AND
-        client_id = auth.user_client_id() AND
-        EXISTS(
-            SELECT 1 FROM users
-            WHERE id = auth.uid() AND is_billing_admin = TRUE
-        )
+-- Exceptions table policies
+CREATE POLICY "exceptions_access_policy" ON exceptions
+    FOR ALL USING (
+        get_jwt_role() = 'admin'
+        OR
+        (get_jwt_role() = 'se' AND exceptions.client_id = ANY(get_jwt_assigned_clients()))
+        OR
+        (get_jwt_role() = 'client' AND exceptions.client_id = get_jwt_client_id())
     );
 
-CREATE POLICY "Admins can manage all subscriptions" ON subscriptions
-    FOR ALL USING (auth.user_role() = 'admin');
+-- Subscriptions table policies
+CREATE POLICY "subscriptions_access_policy" ON subscriptions
+    FOR ALL USING (
+        get_jwt_role() = 'admin'
+        OR
+        (get_jwt_role() = 'se' AND subscriptions.client_id = ANY(get_jwt_assigned_clients()))
+        OR
+        (get_jwt_role() = 'client' AND subscriptions.client_id = get_jwt_client_id() AND
+         EXISTS(SELECT 1 FROM users WHERE id = auth.uid() AND is_billing_admin = TRUE))
+    );

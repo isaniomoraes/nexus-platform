@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from 'next-themes'
+import { ReactQueryProvider } from '../providers/react-query'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -16,9 +17,6 @@ export const metadata: Metadata = {
   },
   description: 'Administrative interface for Braintrust Nexus platform',
   robots: 'noindex, nofollow', // Admin should not be indexed
-  icons: {
-    icon: '/favicon.svg',
-  },
 }
 
 export default function RootLayout({
@@ -30,7 +28,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} antialiased bg-sidebar`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
+          <ReactQueryProvider>
+            {children}
+          </ReactQueryProvider>
         </ThemeProvider>
       </body>
     </html>

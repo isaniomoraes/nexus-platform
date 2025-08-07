@@ -1,16 +1,16 @@
 -- Insert sample clients
 INSERT INTO clients (id, name, url, contract_start_date, departments, pipeline_phase, assigned_ses) VALUES
-('550e8400-e29b-41d4-a716-446655440001', 'TechCorp Inc.', 'https://techcorp.com', '2024-01-15', ARRAY['Finance', 'HR', 'Operations'], 'Production deploy', ARRAY['550e8400-e29b-41d4-a716-446655440101']),
-('550e8400-e29b-41d4-a716-446655440002', 'Global Manufacturing Ltd.', 'https://globalmanufacturing.com', '2024-03-01', ARRAY['Supply Chain', 'Quality Control'], 'Testing started', ARRAY['550e8400-e29b-41d4-a716-446655440101']),
-('550e8400-e29b-41d4-a716-446655440003', 'RetailMax Solutions', 'https://retailmax.com', '2024-02-10', ARRAY['Inventory', 'Customer Service'], 'Factory build initiated', ARRAY['550e8400-e29b-41d4-a716-446655440102']);
+('550e8400-e29b-41d4-a716-446655440001', 'TechCorp Inc.', 'https://techcorp.com', '2024-01-15', ARRAY['Finance', 'HR', 'Operations'], 'Production deploy', ARRAY['550e8400-e29b-41d4-a716-446655440101']::UUID[]),
+('550e8400-e29b-41d4-a716-446655440002', 'Global Manufacturing Ltd.', 'https://globalmanufacturing.com', '2024-03-01', ARRAY['Supply Chain', 'Quality Control'], 'Testing started', ARRAY['550e8400-e29b-41d4-a716-446655440101']::UUID[]),
+('550e8400-e29b-41d4-a716-446655440003', 'RetailMax Solutions', 'https://retailmax.com', '2024-02-10', ARRAY['Inventory', 'Customer Service'], 'Factory build initiated', ARRAY['550e8400-e29b-41d4-a716-446655440102']::UUID[]);
 
 -- Insert sample users
 INSERT INTO users (id, email, name, phone, role, client_id, assigned_clients, is_billing_admin, can_manage_users) VALUES
 -- Admin users
 ('550e8400-e29b-41d4-a716-446655440100', 'admin@nexus.com', 'Sarah Johnson', '+1-555-0100', 'admin', NULL, NULL, FALSE, TRUE),
 -- SE users
-('550e8400-e29b-41d4-a716-446655440101', 'john.doe@nexus.com', 'John Doe', '+1-555-0101', 'se', NULL, ARRAY['550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002'], FALSE, FALSE),
-('550e8400-e29b-41d4-a716-446655440102', 'jane.smith@nexus.com', 'Jane Smith', '+1-555-0102', 'se', NULL, ARRAY['550e8400-e29b-41d4-a716-446655440003'], FALSE, FALSE),
+('550e8400-e29b-41d4-a716-446655440101', 'john.doe@nexus.com', 'John Doe', '+1-555-0101', 'se', NULL, ARRAY['550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002']::UUID[], FALSE, FALSE),
+('550e8400-e29b-41d4-a716-446655440102', 'jane.smith@nexus.com', 'Jane Smith', '+1-555-0102', 'se', NULL, ARRAY['550e8400-e29b-41d4-a716-446655440003']::UUID[], FALSE, FALSE),
 -- Client users for TechCorp
 ('550e8400-e29b-41d4-a716-446655440201', 'mike.wilson@techcorp.com', 'Mike Wilson', '+1-555-0201', 'client', '550e8400-e29b-41d4-a716-446655440001', NULL, TRUE, TRUE),
 ('550e8400-e29b-41d4-a716-446655440202', 'lisa.brown@techcorp.com', 'Lisa Brown', '+1-555-0202', 'client', '550e8400-e29b-41d4-a716-446655440001', NULL, FALSE, FALSE),

@@ -1,19 +1,18 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { usePathname } from "next/navigation"
-import Link from "next/link"
+import * as React from "react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import {
-  BarChart3,
+  LineChart,
   Building2,
   CreditCard,
   MessageSquare,
   PieChart,
   RefreshCw,
-  Settings,
   TriangleAlert,
   Users,
-} from "lucide-react"
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -25,15 +24,14 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@nexus/ui/components"
-import { Logo } from "@nexus/ui/components"
+} from "@nexus/ui/components";
+import { Logo } from "@nexus/ui/components";
 
-// Menu items matching the image provided
 const menuItems = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: BarChart3,
+    icon: LineChart,
   },
   {
     title: "Users",
@@ -59,21 +57,23 @@ const menuItems = [
     title: "Messaging",
     url: "/messaging",
     icon: MessageSquare,
+    disabled: true,
   },
   {
     title: "Reporting",
     url: "/reporting",
     icon: PieChart,
+    disabled: true,
   },
   {
     title: "Exceptions",
     url: "/exceptions",
     icon: TriangleAlert,
   },
-]
+];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <Sidebar {...props}>
@@ -96,7 +96,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       asChild
                       isActive={isActive}
                       className="p-4 py-5 rounded-lg transition-all">
-                      <Link href={item.url}>
+                      <Link
+                        href={item.url}
+                        className={item.disabled ? "cursor-not-allowed pointer-events-none" : ""}
+                        aria-disabled={item.disabled}
+                        >
                         <item.icon />
                         <span>{item.title}</span>
                       </Link>

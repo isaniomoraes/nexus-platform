@@ -2,11 +2,14 @@
 
 import { useTheme } from 'next-themes'
 import { Separator, Label, Button, Input } from '@nexus/ui/components'
+import { useMe, useUpdateMe } from '@/src/hooks/use-me'
 import { Sun, Moon, Monitor } from 'lucide-react'
 
 export default function ProfilePage() {
   const { theme, setTheme, systemTheme } = useTheme()
   const current = theme === 'system' ? systemTheme : theme
+  const { data: meData, isLoading } = useMe()
+  const updateMe = useUpdateMe()
 
   return (
     <div className="space-y-6">
@@ -28,11 +31,11 @@ export default function ProfilePage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" name="firstName" placeholder="Jane" />
+              <Input id="firstName" name="firstName" placeholder="Jane" defaultValue={meData?.data.name?.split(' ')[0] ?? ''} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" name="lastName" placeholder="Doe" />
+              <Input id="lastName" name="lastName" placeholder="Doe" defaultValue={meData?.data.name?.split(' ').slice(1).join(' ') ?? ''} />
             </div>
           </div>
           <div className="space-y-2">
@@ -42,12 +45,18 @@ export default function ProfilePage() {
               name="email"
               type="email"
               readOnly
-              value="jane.doe@example.com"
+              value={meData?.data.email ?? ''}
               className="cursor-not-allowed text-muted-foreground"
             />
           </div>
           <div className="flex justify-end">
-            <Button type="button">Save</Button>
+            <Button type="button" disabled={updateMe.isPending || isLoading} onClick={() => {
+              const form = (document.activeElement as HTMLElement)?.closest('form') as HTMLFormElement | null
+              const firstName = (document.getElementById('firstName') as HTMLInputElement | null)?.value ?? ''
+              const lastName = (document.getElementById('lastName') as HTMLInputElement | null)?.value ?? ''
+              const phone = (document.getElementById('phone') as HTMLInputElement | null)?.value ?? ''
+              updateMe.mutate({ firstName, lastName, phone })
+            }}>Save</Button>
           </div>
         </div>
       </section>
