@@ -8,13 +8,6 @@ export const metadata: Metadata = {
 export default function ReportingPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Reporting</h1>
-        <p className="text-muted-foreground">
-          Advanced analytics and reporting for platform performance and client metrics.
-        </p>
-      </div>
-
       <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
         <h3 className="text-lg font-semibold mb-4">Analytics Dashboard</h3>
         <p className="text-muted-foreground">

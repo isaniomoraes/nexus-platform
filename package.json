@@ -17,5 +17,8 @@
   },
   "engines": {
     "node": ">=18.17.0"
+  },
+  "dependencies": {
+    "next-themes": "^0.3.0"
   }
 }

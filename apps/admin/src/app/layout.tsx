@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { ThemeProvider } from 'next-themes'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -15,6 +16,9 @@ export const metadata: Metadata = {
   },
   description: 'Administrative interface for Braintrust Nexus platform',
   robots: 'noindex, nofollow', // Admin should not be indexed
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({
@@ -25,7 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased bg-sidebar`}>
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )

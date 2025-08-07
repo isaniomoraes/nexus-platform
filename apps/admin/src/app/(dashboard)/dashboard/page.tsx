@@ -8,13 +8,6 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome to the Nexus admin dashboard. Here you can monitor system-wide metrics and manage your platform.
-        </p>
-      </div>
 
       {/* Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

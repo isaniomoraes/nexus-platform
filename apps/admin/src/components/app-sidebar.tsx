@@ -26,6 +26,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@nexus/ui/components"
+import { Logo } from "@nexus/ui/components"
 
 // Menu items matching the image provided
 const menuItems = [
@@ -78,14 +79,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1">
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <Settings className="size-4" />
-          </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">Nexus Admin</span>
-            <span className="truncate text-xs text-sidebar-foreground/70">
-              Platform Management
-            </span>
+          <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-sidebar-primary">
+            <Logo className="size-6" />
           </div>
         </div>
       </SidebarHeader>
@@ -94,25 +89,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
-                const isActive = pathname === item.url
+                const isActive = pathname === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      className="p-4 py-5 rounded-lg transition-all">
                       <Link href={item.url}>
                         <item.icon />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                )
+                );
               })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        {/* User dropdown will go here */}
-      </SidebarFooter>
+      <SidebarFooter>{/* User dropdown will go here */}</SidebarFooter>
     </Sidebar>
-  )
+  );
 }
