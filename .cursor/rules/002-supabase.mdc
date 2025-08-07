@@ -1,0 +1,313 @@
+---
+description: Supabase integration guidelines with SSR support for Nexus platform
+globs: ["**/*.{ts,tsx}", "lib/**/*", "server/**/*"]
+dependencies: ["000-core.mdc"]
+alwaysApply: false
+priority: 85
+---
+
+# Supabase Integration Guidelines
+
+## Monorepo Database Architecture
+
+### **Shared Database Pattern**
+Both `apps/admin` and `apps/client` connect to the **same Supabase instance** with different access levels:
+
+```typescript
+// packages/database/src/index.ts - Shared database client
+import { createBrowserClient, createServerClient } from '@supabase/ssr'
+
+export const SUPABASE_CONFIG = {
+  url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!, // Admin app only
+}
+
+// Standard client (both apps) - respects RLS
+export function createClient() {
+  return createBrowserClient(
+    SUPABASE_CONFIG.url,
+    SUPABASE_CONFIG.anonKey
+  )
+}
+
+// Service role client (admin app only) - can bypass RLS when needed
+export function createServiceClient() {
+  return createBrowserClient(
+    SUPABASE_CONFIG.url,
+    SUPABASE_CONFIG.serviceRoleKey
+  )
+}
+```
+
+### **Access Control Strategy**
+- **Admin App**: Uses both standard client (with RLS) and service role client for administrative operations
+- **Client App**: Uses only standard client with strict RLS enforcement
+- **Row Level Security**: Automatically filters data based on user role and client association
+
+### MANDATORY Requirements
+1. **MUST use `@supabase/ssr` package** - NEVER use deprecated auth-helpers
+2. **MUST use ONLY `getAll` and `setAll`** for cookies - NEVER use individual methods
+3. **MUST NEVER use `get`, `set`, or `remove`** cookie methods - BREAKS APPLICATION
+4. **MUST NEVER import from `@supabase/auth-helpers-nextjs`** - DEPRECATED
+
+### Correct Client Implementation
+
+```typescript
+// lib/supabase/client.ts (Browser Client)
+import { createBrowserClient } from '@supabase/ssr'
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+
+// lib/supabase/server.ts (Server Client)
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export function createClient() {
+  const cookieStore = cookies()
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            // Handle server component cookie setting
+          }
+        },
+      },
+    }
+  )
+}
+```
+
+### Middleware Implementation
+```typescript
+// middleware.ts
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next()
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // Refresh auth session
+  const { data: { user } } = await supabase.auth.getUser()
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}
+```
+
+## Database Schema Design
+
+### User Roles & Access Control
+```typescript
+// Define Zod schemas for all data models
+export const UserRoleSchema = z.enum(['admin', 'se', 'client'])
+
+export const UserSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  role: UserRoleSchema,
+  client_id: z.string().uuid().optional(),
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime(),
+})
+
+export type User = z.infer<typeof UserSchema>
+```
+
+### Row Level Security (RLS)
+```sql
+-- Enable RLS on all tables
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workflows ENABLE ROW LEVEL SECURITY;
+
+-- Admin can see everything
+CREATE POLICY "Admins can view all users" ON users
+  FOR SELECT USING (auth.role() = 'admin');
+
+-- SEs can only see their assigned clients
+CREATE POLICY "SEs can view assigned clients" ON clients
+  FOR SELECT USING (
+    auth.role() = 'se' AND
+    id IN (SELECT client_id FROM se_assignments WHERE se_id = auth.uid())
+  );
+
+-- Clients can only see their own data
+CREATE POLICY "Clients can view own data" ON workflows
+  FOR SELECT USING (client_id = auth.jwt()->>'client_id');
+```
+
+### Database Operations
+
+```typescript
+// Server-side queries with service role
+import { createClient } from '@/lib/supabase/server'
+
+export async function getClientData(clientId: string) {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('clients')
+    .select(`
+      *,
+      workflows(*),
+      users(*)
+    `)
+    .eq('id', clientId)
+    .single()
+
+  if (error) throw new Error(`Failed to fetch client: ${error.message}`)
+  return data
+}
+
+// Client-side queries with React Query
+'use client'
+import { createClient } from '@/lib/supabase/client'
+import { useQuery } from '@tanstack/react-query'
+
+export function useClientWorkflows(clientId: string) {
+  const supabase = createClient()
+
+  return useQuery({
+    queryKey: ['workflows', clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('workflows')
+        .select('*')
+        .eq('client_id', clientId)
+
+      if (error) throw error
+      return data
+    },
+  })
+}
+```
+
+### Authentication Patterns
+
+```typescript
+// Server Component auth check
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+
+export default async function AdminPage() {
+  const supabase = createClient()
+
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    redirect('/login')
+  }
+
+  if (user.user_metadata.role !== 'admin') {
+    redirect('/unauthorized')
+  }
+
+  return <AdminDashboard />
+}
+
+// Client Component auth hook
+'use client'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+
+export function useAuth() {
+  const supabase = createClient()
+  const router = useRouter()
+
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    router.refresh()
+  }
+
+  return { signOut }
+}
+```
+
+### Real-time Subscriptions
+```typescript
+'use client'
+export function useWorkflowSubscription(workflowId: string) {
+  const supabase = createClient()
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    const subscription = supabase
+      .channel('workflow_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'workflows',
+          filter: `id=eq.${workflowId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({
+            queryKey: ['workflow', workflowId]
+          })
+        }
+      )
+      .subscribe()
+
+    return () => subscription.unsubscribe()
+  }, [workflowId, queryClient])
+}
+```
+
+## Error Handling
+- Always handle Supabase errors gracefully
+- Use proper error boundaries for auth failures
+- Implement retry logic for network issues
+- Log errors for debugging but don't expose sensitive info
+
+## Anti-Patterns to Avoid
+- ❌ NEVER use deprecated `@supabase/auth-helpers-nextjs`
+- ❌ NEVER use individual cookie methods (get, set, remove)
+- ❌ Don't expose service role key on client
+- ❌ Don't bypass RLS policies in production
+- ❌ Never store sensitive data in localStorage

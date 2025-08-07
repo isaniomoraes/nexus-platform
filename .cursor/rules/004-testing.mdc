@@ -1,0 +1,515 @@
+---
+description: Testing strategies and patterns for Jest, Testing Library, and Playwright
+globs: ["**/*.{test,spec}.{ts,tsx}", "__tests__/**/*", "e2e/**/*"]
+dependencies: ["000-core.mdc"]
+alwaysApply: false
+priority: 75
+---
+
+# Testing Guidelines for Nexus Platform
+
+## Testing Strategy Overview
+
+### Testing Pyramid
+1. **Unit Tests (70%)** - Components, utilities, business logic
+2. **Integration Tests (20%)** - API routes, database operations, user flows
+3. **E2E Tests (10%)** - Critical user journeys, cross-browser testing
+
+### Testing Libraries
+- **Jest**: Test runner and assertion library
+- **Testing Library**: Component testing utilities
+- **Playwright**: End-to-end testing
+- **MSW**: API mocking for tests
+
+## Unit Testing Patterns
+
+### Component Testing
+```typescript
+// __tests__/components/ClientCard.test.tsx
+import { render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ClientCard } from '@/components/ClientCard'
+import { mockClient } from '@/test/mocks'
+
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+    mutations: { retry: false },
+  },
+})
+
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = createTestQueryClient()
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  )
+}
+
+describe('ClientCard', () => {
+  it('displays client information correctly', () => {
+    render(
+      <ClientCard client={mockClient} onEdit={jest.fn()} />,
+      { wrapper: TestWrapper }
+    )
+
+    expect(screen.getByText(mockClient.name)).toBeInTheDocument()
+    expect(screen.getByText(mockClient.url)).toBeInTheDocument()
+    expect(screen.getByText('Edit Client')).toBeInTheDocument()
+  })
+
+  it('calls onEdit when edit button is clicked', async () => {
+    const mockOnEdit = jest.fn()
+    const user = userEvent.setup()
+
+    render(
+      <ClientCard client={mockClient} onEdit={mockOnEdit} />,
+      { wrapper: TestWrapper }
+    )
+
+    await user.click(screen.getByText('Edit Client'))
+    expect(mockOnEdit).toHaveBeenCalledWith(mockClient.id)
+  })
+})
+```
+
+### Hook Testing
+```typescript
+// __tests__/hooks/useClientData.test.ts
+import { renderHook, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useClientData } from '@/hooks/useClientData'
+import { server } from '@/test/server'
+import { mockClient } from '@/test/mocks'
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } }
+  })
+
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      {children}
+    </QueryClientProvider>
+  )
+}
+
+describe('useClientData', () => {
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  it('fetches client data successfully', async () => {
+    const { result } = renderHook(
+      () => useClientData(mockClient.id),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true)
+    })
+
+    expect(result.current.data).toEqual(mockClient)
+  })
+
+  it('handles error states', async () => {
+    server.use(
+      http.get('/api/clients/:id', () => {
+        return HttpResponse.json({ error: 'Not found' }, { status: 404 })
+      })
+    )
+
+    const { result } = renderHook(
+      () => useClientData('invalid-id'),
+      { wrapper: createWrapper() }
+    )
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true)
+    })
+
+    expect(result.current.error).toBeDefined()
+  })
+})
+```
+
+### Utility Function Testing
+```typescript
+// __tests__/lib/validations.test.ts
+import { ClientSchema, CreateClientSchema } from '@/lib/validations'
+import { mockClient } from '@/test/mocks'
+
+describe('ClientSchema', () => {
+  it('validates valid client data', () => {
+    const result = ClientSchema.safeParse(mockClient)
+    expect(result.success).toBe(true)
+
+    if (result.success) {
+      expect(result.data.id).toBe(mockClient.id)
+      expect(result.data.name).toBe(mockClient.name)
+    }
+  })
+
+  it('rejects invalid client data', () => {
+    const invalidClient = { ...mockClient, email: 'invalid-email' }
+    const result = ClientSchema.safeParse(invalidClient)
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues).toContainEqual(
+        expect.objectContaining({
+          path: ['email'],
+          code: 'invalid_string'
+        })
+      )
+    }
+  })
+})
+```
+
+## Integration Testing
+
+### API Route Testing
+```typescript
+// __tests__/api/clients.test.ts
+import { createMocks } from 'node-mocks-http'
+import handler from '@/app/api/clients/route'
+import { createClient } from '@/lib/supabase/server'
+
+jest.mock('@/lib/supabase/server')
+
+describe('/api/clients', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  it('GET returns clients list for admin users', async () => {
+    const mockSupabase = {
+      from: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockResolvedValue({
+        data: [mockClient],
+        error: null,
+      }),
+      auth: {
+        getUser: jest.fn().mockResolvedValue({
+          data: { user: { user_metadata: { role: 'admin' } } },
+          error: null,
+        }),
+      },
+    }
+
+    ;(createClient as jest.Mock).mockReturnValue(mockSupabase)
+
+    const { req, res } = createMocks({ method: 'GET' })
+    await handler(req, res)
+
+    expect(res._getStatusCode()).toBe(200)
+    expect(JSON.parse(res._getData())).toEqual([mockClient])
+  })
+
+  it('POST creates a new client', async () => {
+    const newClient = { ...mockClient, id: undefined }
+    const createdClient = { ...mockClient, id: 'new-id' }
+
+    const mockSupabase = {
+      from: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      select: jest.fn().mockResolvedValue({
+        data: [createdClient],
+        error: null,
+      }),
+      auth: {
+        getUser: jest.fn().mockResolvedValue({
+          data: { user: { user_metadata: { role: 'admin' } } },
+          error: null,
+        }),
+      },
+    }
+
+    ;(createClient as jest.Mock).mockReturnValue(mockSupabase)
+
+    const { req, res } = createMocks({
+      method: 'POST',
+      body: newClient,
+    })
+
+    await handler(req, res)
+
+    expect(res._getStatusCode()).toBe(201)
+    expect(JSON.parse(res._getData())).toEqual(createdClient)
+  })
+})
+```
+
+### Database Integration Testing
+```typescript
+// __tests__/lib/database.test.ts
+import { getClientWithUsers, createClient } from '@/lib/database'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+
+// Use actual Supabase for integration tests
+const supabase = createSupabaseClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+)
+
+describe('Database Operations', () => {
+  beforeAll(async () => {
+    // Setup test data
+    await supabase.from('clients').insert(mockClient)
+  })
+
+  afterAll(async () => {
+    // Cleanup test data
+    await supabase.from('clients').delete().eq('id', mockClient.id)
+  })
+
+  it('fetches client with users', async () => {
+    const result = await getClientWithUsers(mockClient.id)
+
+    expect(result).toBeDefined()
+    expect(result.id).toBe(mockClient.id)
+    expect(result.users).toBeDefined()
+  })
+})
+```
+
+## E2E Testing with Playwright
+
+### Setup
+```typescript
+// playwright.config.ts
+import { defineConfig } from '@playwright/test'
+
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+  },
+})
+```
+
+### E2E Test Examples
+```typescript
+// e2e/admin-dashboard.spec.ts
+import { test, expect } from '@playwright/test'
+
+test.describe('Admin Dashboard', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login as admin
+    await page.goto('/login')
+    await page.fill('[data-testid="email"]', 'admin@test.com')
+    await page.fill('[data-testid="password"]', 'password')
+    await page.click('[data-testid="login-button"]')
+    await page.waitForURL('/admin/dashboard')
+  })
+
+  test('displays dashboard metrics', async ({ page }) => {
+    await expect(page.locator('[data-testid="total-workflows"]')).toBeVisible()
+    await expect(page.locator('[data-testid="total-exceptions"]')).toBeVisible()
+    await expect(page.locator('[data-testid="time-saved"]')).toBeVisible()
+    await expect(page.locator('[data-testid="active-clients"]')).toBeVisible()
+  })
+
+  test('navigates to client management', async ({ page }) => {
+    await page.click('[data-testid="clients-nav"]')
+    await page.waitForURL('/admin/clients')
+
+    await expect(page.locator('h1')).toContainText('Client Management')
+    await expect(page.locator('[data-testid="clients-table"]')).toBeVisible()
+  })
+
+  test('creates a new client', async ({ page }) => {
+    await page.goto('/admin/clients')
+    await page.click('[data-testid="add-client-button"]')
+
+    await page.fill('[data-testid="client-name"]', 'Test Company')
+    await page.fill('[data-testid="client-url"]', 'https://test.com')
+    await page.click('[data-testid="save-client"]')
+
+    await expect(page.locator('[data-testid="success-message"]')).toBeVisible()
+    await expect(page.locator('text=Test Company')).toBeVisible()
+  })
+})
+
+// e2e/client-app.spec.ts
+test.describe('Client Application', () => {
+  test('client can view their workflows', async ({ page }) => {
+    // Login as client user
+    await page.goto('/login')
+    await page.fill('[data-testid="email"]', 'client@test.com')
+    await page.fill('[data-testid="password"]', 'password')
+    await page.click('[data-testid="login-button"]')
+
+    await page.waitForURL('/client/dashboard')
+
+    // Check workflows section
+    await page.click('[data-testid="workflows-nav"]')
+    await expect(page.locator('[data-testid="workflows-table"]')).toBeVisible()
+
+    // Verify client can only see their own data
+    const workflowRows = page.locator('[data-testid="workflow-row"]')
+    const count = await workflowRows.count()
+    expect(count).toBeGreaterThan(0)
+  })
+})
+```
+
+## Test Utilities
+
+### Mock Data
+```typescript
+// test/mocks.ts
+import type { Client, User, Workflow } from '@/types'
+
+export const mockUser: User = {
+  id: 'user-1',
+  email: 'test@example.com',
+  name: 'Test User',
+  role: 'admin',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+}
+
+export const mockClient: Client = {
+  id: 'client-1',
+  name: 'Test Company',
+  url: 'https://test.com',
+  contract_start_date: '2024-01-01',
+  assigned_ses: ['se-1'],
+  departments: ['Engineering', 'Sales'],
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+}
+
+export const mockWorkflow: Workflow = {
+  id: 'workflow-1',
+  client_id: 'client-1',
+  name: 'Invoice Processing',
+  department: 'Finance',
+  description: 'Automated invoice processing workflow',
+  is_active: true,
+  node_count: 5,
+  execution_count: 100,
+  exception_count: 2,
+  time_saved_per_execution: 30,
+  money_saved_per_execution: 50,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z',
+}
+```
+
+### MSW Handlers
+```typescript
+// test/handlers.ts
+import { http, HttpResponse } from 'msw'
+import { mockClient, mockWorkflow } from './mocks'
+
+export const handlers = [
+  http.get('/api/clients', () => {
+    return HttpResponse.json([mockClient])
+  }),
+
+  http.get('/api/clients/:id', ({ params }) => {
+    return HttpResponse.json(mockClient)
+  }),
+
+  http.post('/api/clients', async ({ request }) => {
+    const client = await request.json()
+    return HttpResponse.json({ ...client, id: 'new-id' }, { status: 201 })
+  }),
+
+  http.get('/api/workflows', () => {
+    return HttpResponse.json([mockWorkflow])
+  }),
+]
+
+// test/server.ts
+import { setupServer } from 'msw/node'
+import { handlers } from './handlers'
+
+export const server = setupServer(...handlers)
+```
+
+## Test Configuration
+
+### Jest Setup
+```javascript
+// jest.config.js
+module.exports = {
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
+  moduleNameMapping: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/*.stories.{ts,tsx}',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+}
+
+// test/setup.ts
+import '@testing-library/jest-dom'
+import { server } from './server'
+
+beforeAll(() => server.listen())
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
+```
+
+## Best Practices
+
+### Testing Philosophy
+- Test behavior, not implementation
+- Write tests before fixing bugs
+- Keep tests simple and focused
+- Use descriptive test names
+- Mock external dependencies
+- Test error scenarios
+
+### Coverage Goals
+- Aim for 80%+ code coverage
+- 100% coverage for critical business logic
+- Focus on testing user workflows
+- Test edge cases and error states
+
+### Performance Testing
+```typescript
+// Performance testing example
+test('dashboard loads within acceptable time', async ({ page }) => {
+  const startTime = Date.now()
+  await page.goto('/admin/dashboard')
+  await page.waitForLoadState('networkidle')
+  const loadTime = Date.now() - startTime
+
+  expect(loadTime).toBeLessThan(3000) // 3 seconds max
+})
+```

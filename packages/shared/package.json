@@ -1,0 +1,17 @@
+{
+  "name": "@nexus/shared",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./constants": "./src/constants.ts",
+    "./utils": "./src/utils.ts",
+    "./validations": "./src/validations.ts"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "date-fns": "^3.6.0"
+  }
+}

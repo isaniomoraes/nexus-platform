@@ -1,0 +1,320 @@
+---
+description: TypeScript development standards and Zod validation patterns for Nexus platform
+globs: ["**/*.{ts,tsx}", "types/**/*", "lib/validations.ts"]
+dependencies: ["000-core.mdc"]
+alwaysApply: false
+priority: 80
+---
+
+# TypeScript Development Standards
+
+## Strict TypeScript Rules
+
+### Core Principles
+- **NO `any` types** - Use proper typing always
+- **Zod-first approach** - Define schemas first, infer types
+- Use strict TypeScript configuration
+- Prefer `interface` over `type` for object shapes
+- Use const assertions and satisfies operator
+
+### Zod Schema Patterns
+
+```typescript
+// lib/validations.ts - Central validation schemas
+import { z } from 'zod'
+
+// Base schemas
+export const UserRoleSchema = z.enum(['admin', 'se', 'client'])
+export const ExceptionSeveritySchema = z.enum(['critical', 'high', 'medium', 'low'])
+export const ExceptionStatusSchema = z.enum(['new', 'in_progress', 'resolved', 'ignored'])
+
+// Entity schemas
+export const UserSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  name: z.string().min(1),
+  phone: z.string().optional(),
+  role: UserRoleSchema,
+  client_id: z.string().uuid().optional(),
+  is_billing_admin: z.boolean().default(false),
+  can_manage_users: z.boolean().default(false),
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime(),
+})
+
+export const ClientSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+  url: z.string().url().optional(),
+  contract_start_date: z.string().date(),
+  assigned_ses: z.array(z.string().uuid()),
+  departments: z.array(z.string()),
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime(),
+})
+
+export const WorkflowSchema = z.object({
+  id: z.string().uuid(),
+  client_id: z.string().uuid(),
+  name: z.string().min(1),
+  department: z.string(),
+  description: z.string().optional(),
+  is_active: z.boolean().default(true),
+  node_count: z.number().int().min(0),
+  execution_count: z.number().int().min(0),
+  exception_count: z.number().int().min(0),
+  time_saved_per_execution: z.number().min(0),
+  money_saved_per_execution: z.number().min(0),
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime(),
+})
+
+export const ExceptionSchema = z.object({
+  id: z.string().uuid(),
+  client_id: z.string().uuid(),
+  workflow_id: z.string().uuid(),
+  type: z.enum(['authentication', 'data_process', 'integration', 'workflow_logic', 'browser_automation']),
+  severity: ExceptionSeveritySchema,
+  status: ExceptionStatusSchema,
+  remedy: z.string().optional(),
+  reported_at: z.string().datetime(),
+  resolved_at: z.string().datetime().optional(),
+})
+
+// Form validation schemas
+export const CreateClientSchema = ClientSchema.omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+}).extend({
+  users: z.array(UserSchema.omit({
+    id: true,
+    client_id: true,
+    created_at: true,
+    updated_at: true,
+  })),
+})
+
+export const UpdateWorkflowSchema = WorkflowSchema.partial().required({
+  id: true,
+})
+
+// API request/response schemas
+export const GetClientsResponseSchema = z.object({
+  data: z.array(ClientSchema),
+  count: z.number(),
+  page: z.number(),
+  limit: z.number(),
+})
+
+// Type inference
+export type User = z.infer<typeof UserSchema>
+export type Client = z.infer<typeof ClientSchema>
+export type Workflow = z.infer<typeof WorkflowSchema>
+export type Exception = z.infer<typeof ExceptionSchema>
+export type CreateClientInput = z.infer<typeof CreateClientSchema>
+export type UserRole = z.infer<typeof UserRoleSchema>
+```
+
+### Advanced Type Patterns
+
+```typescript
+// Utility types
+export type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
+
+export type OptionalExceptFor<T, TRequired extends keyof T> = Partial<T> & Pick<T, TRequired>
+
+export type DeepNullable<T> = {
+  [P in keyof T]: T[P] extends object ? DeepNullable<T[P]> : T[P] | null
+}
+
+// Database types with relationships
+export type ClientWithUsers = Client & {
+  users: User[]
+}
+
+export type WorkflowWithRelations = Workflow & {
+  client: Client
+  exceptions: Exception[]
+}
+
+// API response types
+export type PaginatedResponse<T> = {
+  data: T[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+  }
+}
+
+// Form types
+export type FormState<T> = {
+  data: T
+  errors: Partial<Record<keyof T, string>>
+  isSubmitting: boolean
+  isDirty: boolean
+}
+
+// Filter types for tables
+export type ClientFilters = {
+  search?: string
+  role?: UserRole
+  dateRange?: {
+    start: Date
+    end: Date
+  }
+}
+
+// Sort types
+export type SortConfig<T> = {
+  key: keyof T
+  direction: 'asc' | 'desc'
+}
+```
+
+### Component Props Patterns
+
+```typescript
+// Base component props
+interface BaseComponentProps {
+  className?: string
+  children?: React.ReactNode
+}
+
+// Generic table props
+interface TableProps<TData> extends BaseComponentProps {
+  data: TData[]
+  columns: ColumnDef<TData>[]
+  onRowClick?: (row: TData) => void
+  pagination?: PaginationConfig
+  sorting?: SortConfig<TData>[]
+}
+
+// Form component props with Zod schema
+interface FormProps<TSchema extends z.ZodSchema> extends BaseComponentProps {
+  schema: TSchema
+  defaultValues?: Partial<z.infer<TSchema>>
+  onSubmit: (data: z.infer<TSchema>) => Promise<void> | void
+}
+
+// Modal component props
+interface ModalProps extends BaseComponentProps {
+  isOpen: boolean
+  onClose: () => void
+  title?: string
+  size?: 'sm' | 'md' | 'lg' | 'xl'
+}
+```
+
+### Error Handling Types
+
+```typescript
+// Custom error types
+export class ValidationError extends Error {
+  constructor(
+    message: string,
+    public field: string,
+    public code: string
+  ) {
+    super(message)
+    this.name = 'ValidationError'
+  }
+}
+
+export class AuthenticationError extends Error {
+  constructor(message: string = 'Authentication required') {
+    super(message)
+    this.name = 'AuthenticationError'
+  }
+}
+
+export class AuthorizationError extends Error {
+  constructor(message: string = 'Insufficient permissions') {
+    super(message)
+    this.name = 'AuthorizationError'
+  }
+}
+
+// Result type for error handling
+export type Result<T, E = Error> =
+  | { success: true; data: T }
+  | { success: false; error: E }
+
+// Async result wrapper
+export async function tryCatch<T>(
+  promise: Promise<T>
+): Promise<Result<T>> {
+  try {
+    const data = await promise
+    return { success: true, data }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error : new Error(String(error))
+    }
+  }
+}
+```
+
+### tRPC Types
+
+```typescript
+// tRPC input/output types
+export type GetClientsInput = z.infer<typeof GetClientsInputSchema>
+export type GetClientsOutput = z.infer<typeof GetClientsOutputSchema>
+
+// tRPC context type
+export interface TRPCContext {
+  user: User | null
+  supabase: SupabaseClient
+}
+
+// Router type inference
+export type AppRouter = typeof appRouter
+export type RouterInputs = inferRouterInputs<AppRouter>
+export type RouterOutputs = inferRouterOutputs<AppRouter>
+```
+
+## Best Practices
+
+### Function Signatures
+```typescript
+// Use proper function typing
+type HandlerFunction<T, R> = (input: T) => Promise<R> | R
+
+// Generic async function
+async function processData<T extends z.ZodSchema>(
+  schema: T,
+  data: unknown
+): Promise<z.infer<T>> {
+  const result = schema.safeParse(data)
+  if (!result.success) {
+    throw new ValidationError('Invalid data', 'general', 'VALIDATION_FAILED')
+  }
+  return result.data
+}
+```
+
+### Type Guards
+```typescript
+// User-defined type guards
+export function isAdmin(user: User): user is User & { role: 'admin' } {
+  return user.role === 'admin'
+}
+
+export function isException(value: unknown): value is Exception {
+  return ExceptionSchema.safeParse(value).success
+}
+```
+
+## Anti-Patterns to Avoid
+- ❌ NEVER use `any` type
+- ❌ Don't use `object` type - be specific
+- ❌ Avoid type assertions unless absolutely necessary
+- ❌ Don't define types without Zod schemas for data models
+- ❌ Never ignore TypeScript errors with `@ts-ignore`
+- ❌ Don't use `Function` type - be specific about signatures

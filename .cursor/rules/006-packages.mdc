@@ -1,0 +1,495 @@
+---
+description: Shared packages structure and development patterns for monorepo
+globs: ["packages/**/*"]
+dependencies: ["000-core.mdc", "005-monorepo.mdc"]
+alwaysApply: false
+priority: 85
+---
+
+# Shared Packages Development Guidelines
+
+## Package Structure Overview
+
+### **`packages/database/`** - Database Layer
+**Purpose**: Centralized Supabase client, types, and queries
+
+```typescript
+// packages/database/package.json
+{
+  "name": "@nexus/database",
+  "version": "0.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./queries": "./src/queries.ts",
+    "./client": "./src/client.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "@supabase/ssr": "^0.4.0",
+    "zod": "^3.23.8"
+  }
+}
+
+// packages/database/src/index.ts
+export * from './client'
+export * from './types'
+export * from './queries'
+export { SUPABASE_CONFIG } from './config'
+
+// packages/database/src/types.ts - Generated from Supabase
+export type Database = {
+  public: {
+    Tables: {
+      users: { /* ... */ }
+      clients: { /* ... */ }
+      workflows: { /* ... */ }
+      // ... other tables
+    }
+  }
+}
+
+// Inferred types
+export type User = Database['public']['Tables']['users']['Row']
+export type Client = Database['public']['Tables']['clients']['Row']
+export type Workflow = Database['public']['Tables']['workflows']['Row']
+```
+
+### **`packages/ui/`** - Shared Components
+**Purpose**: shadcn/ui components and design system
+
+```typescript
+// packages/ui/package.json
+{
+  "name": "@nexus/ui",
+  "version": "0.0.0",
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "exports": {
+    "./components": "./src/components/index.ts",
+    "./styles": "./src/styles/globals.css",
+    "./lib": "./src/lib/utils.ts"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "tailwindcss": "^3.0.0"
+  }
+}
+
+// packages/ui/src/components/index.ts
+export { Button } from './ui/button'
+export { Card, CardContent, CardHeader } from './ui/card'
+export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table'
+
+// Business components (role-aware)
+export { WorkflowCard } from './workflow-card'
+export { ClientCard } from './client-card'
+export { ExceptionTable } from './exception-table'
+export { DataCard } from './data-card'
+export { DashboardMetrics } from './dashboard-metrics'
+```
+
+### **`packages/auth/`** - Authentication Logic
+**Purpose**: Shared auth utilities and permission checking
+
+```typescript
+// packages/auth/package.json
+{
+  "name": "@nexus/auth",
+  "version": "0.0.0",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./permissions": "./src/permissions.ts",
+    "./middleware": "./src/middleware.ts"
+  },
+  "dependencies": {
+    "@nexus/database": "workspace:*",
+    "zod": "^3.23.8"
+  }
+}
+
+// packages/auth/src/permissions.ts
+import type { User } from '@nexus/database/types'
+
+export const USER_ROLES = {
+  ADMIN: 'admin',
+  SE: 'se',
+  CLIENT: 'client'
+} as const
+
+export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES]
+
+export function hasAdminAccess(user: User): boolean {
+  return user.role === USER_ROLES.ADMIN
+}
+
+export function hasSEAccess(user: User): boolean {
+  return [USER_ROLES.ADMIN, USER_ROLES.SE].includes(user.role)
+}
+
+export function canViewAllClients(user: User): boolean {
+  return user.role === USER_ROLES.ADMIN
+}
+
+export function canViewClient(user: User, clientId: string): boolean {
+  if (user.role === USER_ROLES.ADMIN) return true
+  if (user.role === USER_ROLES.SE) {
+    return user.assigned_clients?.includes(clientId) ?? false
+  }
+  if (user.role === USER_ROLES.CLIENT) {
+    return user.client_id === clientId
+  }
+  return false
+}
+
+export function canManageUsers(user: User): boolean {
+  return user.role === USER_ROLES.ADMIN || user.can_manage_users
+}
+
+export function canAccessBilling(user: User): boolean {
+  return user.role !== USER_ROLES.CLIENT || user.is_billing_admin
+}
+```
+
+### **`packages/shared/`** - Business Logic
+**Purpose**: Common utilities, constants, and business logic
+
+```typescript
+// packages/shared/package.json
+{
+  "name": "@nexus/shared",
+  "version": "0.0.0",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./constants": "./src/constants.ts",
+    "./utils": "./src/utils.ts",
+    "./validations": "./src/validations.ts"
+  },
+  "dependencies": {
+    "zod": "^3.23.8",
+    "date-fns": "^2.30.0"
+  }
+}
+
+// packages/shared/src/constants.ts
+export const EXCEPTION_TYPES = {
+  AUTHENTICATION: 'authentication',
+  DATA_PROCESS: 'data_process',
+  INTEGRATION: 'integration',
+  WORKFLOW_LOGIC: 'workflow_logic',
+  BROWSER_AUTOMATION: 'browser_automation'
+} as const
+
+export const EXCEPTION_SEVERITY = {
+  CRITICAL: 'critical',
+  HIGH: 'high',
+  MEDIUM: 'medium',
+  LOW: 'low'
+} as const
+
+export const PIPELINE_PHASES = [
+  'Discovery: Initial Survey',
+  'Discovery: Process deep dive',
+  'ADA Proposal Sent',
+  'ADA Proposal Review done',
+  'ADA Contract Sent',
+  'ADA Contract Signed',
+  'Credentials collected',
+  'Factory build initiated',
+  'Test plan generated',
+  'Testing started',
+  'Production deploy'
+] as const
+
+// packages/shared/src/utils.ts
+export function calculateTimeframe(period: string): { start: Date; end: Date } {
+  const now = new Date()
+  const end = now
+
+  switch (period) {
+    case 'last-7-days':
+      return { start: subDays(now, 7), end }
+    case 'last-30-days':
+      return { start: subDays(now, 30), end }
+    case 'mtd':
+      return { start: startOfMonth(now), end }
+    case 'qtd':
+      return { start: startOfQuarter(now), end }
+    case 'ytd':
+      return { start: startOfYear(now), end }
+    default: // 'itd'
+      return { start: new Date('2024-01-01'), end }
+  }
+}
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(amount)
+}
+
+export function formatDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+
+  if (hours === 0) return `${mins}m`
+  if (mins === 0) return `${hours}h`
+  return `${hours}h ${mins}m`
+}
+```
+
+### **`packages/eslint-config/`** - Shared ESLint
+**Purpose**: Consistent linting across all apps and packages
+
+```typescript
+// packages/eslint-config/package.json
+{
+  "name": "@nexus/eslint-config",
+  "version": "0.0.0",
+  "main": "./index.js",
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint-config-next": "14.2.3",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.34.1",
+    "eslint-plugin-react-hooks": "^4.6.2"
+  }
+}
+
+// packages/eslint-config/index.js
+module.exports = {
+  extends: [
+    "next/core-web-vitals",
+    "@typescript-eslint/recommended",
+    "prettier"
+  ],
+  parser: "@typescript-eslint/parser",
+  parserOptions: {
+    ecmaVersion: "latest",
+    sourceType: "module"
+  },
+  rules: {
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/prefer-nullish-coalescing": "error",
+    "@typescript-eslint/prefer-optional-chain": "error",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  }
+}
+```
+
+### **`packages/tsconfig/`** - TypeScript Configuration
+**Purpose**: Shared TypeScript configurations
+
+```json
+// packages/tsconfig/base.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "es6"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+
+// packages/tsconfig/nextjs.json
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@nexus/ui": ["../../packages/ui/src"],
+      "@nexus/database": ["../../packages/database/src"],
+      "@nexus/auth": ["../../packages/auth/src"],
+      "@nexus/shared": ["../../packages/shared/src"]
+    }
+  }
+}
+```
+
+## Package Development Patterns
+
+### **Cross-Package Dependencies**
+```typescript
+// Apps can import from packages
+import { Button, DataCard } from '@nexus/ui/components'
+import { createClient, type User } from '@nexus/database'
+import { hasAdminAccess, canViewClient } from '@nexus/auth/permissions'
+import { formatCurrency, EXCEPTION_TYPES } from '@nexus/shared'
+
+// Packages can depend on other packages
+// @nexus/auth depends on @nexus/database for types
+// @nexus/ui can use @nexus/shared for utilities
+```
+
+### **Role-Aware Components**
+```typescript
+// packages/ui/src/components/workflow-card.tsx
+import type { Workflow, User } from '@nexus/database/types'
+import { canViewClient } from '@nexus/auth/permissions'
+
+interface WorkflowCardProps {
+  workflow: Workflow
+  user: User
+  onEdit?: (id: string) => void
+}
+
+export function WorkflowCard({ workflow, user, onEdit }: WorkflowCardProps) {
+  const canEdit = canViewClient(user, workflow.client_id) && user.role !== 'client'
+
+  return (
+    <Card>
+      <CardContent>
+        <h3>{workflow.name}</h3>
+        <p>Department: {workflow.department}</p>
+
+        {/* Admin/SE see more details */}
+        {user.role !== 'client' && (
+          <div>
+            <p>Client: {workflow.client?.name}</p>
+            <p>Executions: {workflow.execution_count}</p>
+          </div>
+        )}
+
+        {/* Show edit button only if user can edit */}
+        {canEdit && onEdit && (
+          <Button onClick={() => onEdit(workflow.id)}>
+            Edit Workflow
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+### **Shared Queries with RLS**
+```typescript
+// packages/database/src/queries/workflows.ts
+import type { User } from '../types'
+import { createClient, createServiceClient } from '../client'
+
+// Admin queries (can bypass RLS if needed)
+export async function getAllWorkflows(user: User) {
+  // Use service client for admin to get all data
+  const supabase = user.role === 'admin' ? createServiceClient() : createClient()
+
+  const { data, error } = await supabase
+    .from('workflows')
+    .select(`
+      *,
+      client:clients(*),
+      exceptions(count)
+    `)
+
+  if (error) throw error
+  return data
+}
+
+// Client queries (always use RLS)
+export async function getMyWorkflows() {
+  const supabase = createClient() // RLS will filter automatically
+
+  const { data, error } = await supabase
+    .from('workflows')
+    .select('*')
+
+  if (error) throw error
+  return data
+}
+```
+
+## Package Import Rules
+
+### **Import Patterns**
+```typescript
+// ✅ Correct imports
+import { Button } from '@nexus/ui/components'
+import { createClient } from '@nexus/database'
+import { hasAdminAccess } from '@nexus/auth/permissions'
+
+// ✅ Specific imports for better tree shaking
+import { WorkflowCard } from '@nexus/ui/components'
+import { formatCurrency } from '@nexus/shared/utils'
+
+// ❌ Avoid barrel imports from packages
+import * from '@nexus/ui' // Too broad
+```
+
+### **Dependency Management**
+- **Packages should have minimal dependencies**
+- **Peer dependencies** for React, Next.js, Tailwind
+- **Workspace dependencies** using `workspace:*` protocol
+- **No circular dependencies** between packages
+
+### **Build Process**
+```json
+// turbo.json
+{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}
+```
+
+## Best Practices
+
+### **Package Design**
+- **Single responsibility** - each package has a clear purpose
+- **Small public API** - export only what's needed
+- **Type-safe exports** - proper TypeScript definitions
+- **Documentation** - README for each package
+
+### **Versioning**
+- **Workspace protocol** (`workspace:*`) for internal dependencies
+- **Semantic versioning** for external packages
+- **Lockfile management** with pnpm
+
+### **Testing**
+```typescript
+// Test packages independently
+// packages/auth/src/__tests__/permissions.test.ts
+import { hasAdminAccess, canViewClient } from '../permissions'
+import { mockUser } from '@nexus/shared/test-utils'
+
+describe('Permission System', () => {
+  it('admin can access everything', () => {
+    const admin = mockUser({ role: 'admin' })
+    expect(hasAdminAccess(admin)).toBe(true)
+    expect(canViewClient(admin, 'any-client-id')).toBe(true)
+  })
+})
+```
+
+This package structure ensures **code reusability**, **type safety**, and **consistent behavior** across both admin and client applications while maintaining clear separation of concerns.

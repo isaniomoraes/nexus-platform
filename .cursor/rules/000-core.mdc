@@ -1,0 +1,103 @@
+---
+description: Core principles and foundational configuration for Braintrust Nexus platform development
+globs: ["**/*.{ts,tsx,js,jsx,md,json}"]
+alwaysApply: true
+priority: 100
+---
+
+# Core Development Principles for Braintrust Nexus Platform
+
+## Application Architecture
+- **Admin App** (`apps/admin/`): Full platform management for Braintrust employees (Admin + SE roles)
+- **Client App** (`apps/client/`): Customer portal for client users (restricted to own data)
+- **Shared Database**: Single Supabase instance with Row Level Security (RLS) for access control
+- **Shared Packages**: Common UI components, database layer, authentication, and business logic
+- **Role-Based Access**: Enforced through RLS policies and middleware in each app
+
+## Tech Stack Requirements
+- **Framework**: Next.js 15+ with App Router
+- **Language**: TypeScript (strict mode, NO `any` types)
+- **Styling**: Tailwind CSS + shadcn/ui (themable system)
+- **Database**: Supabase (PostgreSQL)
+- **API**: tRPC for type-safe endpoints
+- **Auth**: Basic auth system (no WorkOS/OAuth2 for test)
+- **State Management**: React Query (@tanstack/react-query) + Zustand where needed
+- **Form Handling**: React Hook Form + Zod validation
+- **Data Tables**: TanStack Table for complex data grids
+- **Icons**: Lucide React
+- **Charts**: Recharts for data visualization
+- **Validation**: Zod for schema validation and type inference
+- **Testing**: Jest + Testing Library + Playwright for E2E
+- **Code Quality**: Prettier + ESLint + Husky for git hooks
+
+## Critical Success Criteria
+The project will be judged on:
+1. **Functionality**: How much works and works correctly
+2. **Code Quality**: Clean, maintainable, well-structured code
+3. **Design Quality**: Production-ready UI that matches requirements
+
+## Core Development Rules
+
+### TypeScript Standards
+- Use strict TypeScript with NO `any` types ever
+- Define all data models with Zod schemas first, then infer types
+- Use proper interfaces and type definitions
+- Prefer `interface` over `type` for object shapes
+- Use const assertions and satisfies operator where appropriate
+
+### Code Structure
+- Use functional components with hooks
+- Implement proper error boundaries and fallbacks
+- Keep functions small and focused (max 20 lines)
+- Use meaningful, descriptive variable names
+- Follow single responsibility principle
+- Implement proper loading states and skeleton UI
+
+### Performance & Quality
+- Use React.memo() for expensive components
+- Implement proper pagination and virtualization
+- Use React Query for intelligent caching
+- Optimize database queries with proper indexing
+- Handle all edge cases and error states
+- Write JSDoc comments for complex business logic
+
+### Security
+- Implement proper authentication flows
+- Use Supabase RLS for data security
+- Sanitize all user inputs
+- Validate all data with Zod schemas
+- Use secure session management
+
+## File Organization
+```
+src/
+├── app/                    # Next.js app router
+├── components/
+│   ├── ui/                 # shadcn/ui components
+│   ├── forms/              # Reusable form components
+│   ├── charts/             # Data visualization
+│   ├── tables/             # TanStack Table components
+│   └── layout/             # Layout components
+├── lib/
+│   ├── auth.ts             # Authentication logic
+│   ├── db.ts               # Database queries
+│   ├── utils.ts            # Utility functions
+│   └── validations.ts      # Zod schemas
+├── server/
+│   ├── routers/            # tRPC routers
+│   └── trpc.ts             # tRPC setup
+├── types/                  # TypeScript definitions
+├── hooks/                  # Custom hooks & React Query
+└── __tests__/              # Test files
+```
+
+## Essential Patterns
+- Always validate data with Zod before processing
+- Use React Query for all server state management
+- Implement optimistic updates where appropriate
+- Create reusable components for common patterns
+- Use TanStack Table for complex data grids
+- Handle loading, error, and empty states consistently
+- Implement proper accessibility (semantic HTML, ARIA)
+
+Remember: This is a showcase of engineering skills. Prioritize **clean, maintainable code** over quick implementations. Make logical assumptions for ambiguous requirements and document them.

@@ -1,0 +1,13 @@
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@nexus/ui": ["../../packages/ui/src"],
+      "@nexus/database": ["../../packages/database/src"],
+      "@nexus/auth": ["../../packages/auth/src"],
+      "@nexus/shared": ["../../packages/shared/src"]
+    }
+  }
+}

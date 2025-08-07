@@ -1,0 +1,369 @@
+---
+description: Monorepo structure and shared database patterns for Nexus admin/client apps
+globs: ["apps/**/*", "packages/**/*", "turbo.json", "**/package.json"]
+dependencies: ["000-core.mdc", "002-supabase.mdc"]
+alwaysApply: true
+priority: 95
+---
+
+# Monorepo Architecture for Nexus Platform
+
+## Project Structure Overview
+This is a **Turborepo monorepo** with two main applications sharing a single Supabase database:
+
+```
+braintrust-nexus/
+├── apps/
+│   ├── admin/                  # Admin Next.js app (Braintrust employees)
+│   │   ├── app/
+│   │   │   ├── (auth)/         # Admin authentication
+│   │   │   ├── dashboard/      # Admin dashboard
+│   │   │   ├── clients/        # Client management
+│   │   │   ├── users/          # User management
+│   │   │   ├── workflows/      # Workflow management
+│   │   │   ├── exceptions/     # Exception handling
+│   │   │   └── billing/        # Billing & subscriptions
+│   │   └── package.json        # "@nexus/admin"
+│   └── client/                 # Client Next.js app (Customer portal)
+│       ├── app/
+│       │   ├── (auth)/         # Client authentication
+│       │   ├── dashboard/      # Client dashboard
+│       │   ├── workflows/      # Workflow ROI view
+│       │   ├── reporting/      # Usage reporting
+│       │   ├── credentials/    # 3rd party credentials
+│       │   ├── exceptions/     # Exception view (own data)
+│       │   └── billing/        # Subscription management
+│       └── package.json        # "@nexus/client"
+├── packages/
+│   ├── database/               # Shared Supabase client & types
+│   ├── ui/                     # Shared shadcn components
+│   ├── auth/                   # Shared authentication logic
+│   ├── shared/                 # Business logic & utilities
+│   ├── eslint-config/          # Shared ESLint config
+│   └── tsconfig/               # Shared TypeScript config
+├── supabase/                   # Single shared database
+│   ├── migrations/             # Database schema
+│   └── config.toml             # Supabase configuration
+└── turbo.json                  # Turborepo configuration
+```
+
+## Application-Specific Rules
+
+### **Admin App (`apps/admin/`)**
+**Purpose**: Full platform management for Braintrust employees (Admin + SE roles)
+
+**Key Features**:
+- **Full client management** - CRUD operations for all clients
+- **User management** - Create/manage Admin, SE, and Client users
+- **Global workflows** - View and manage all client workflows
+- **Exception handling** - Monitor all exceptions across clients
+- **Billing system** - Subscription plans, invoicing, credits
+- **Analytics dashboard** - System-wide metrics and reporting
+
+**Access Control**:
+```typescript
+// Admin app should check for admin/se roles
+const adminRoles = ['admin', 'se'] as const
+
+// Row Level Security allows broader access for admin users
+// Admins see all clients, SEs see assigned clients only
+```
+
+### **Client App (`apps/client/`)**
+**Purpose**: Customer portal for client users to view their data and manage workflows
+
+**Key Features**:
+- **Own data only** - Strict access to client's data via RLS
+- **Workflow ROI** - View their workflows and performance metrics
+- **Exception monitoring** - View/manage their own exceptions
+- **Reporting** - Usage statistics and logs for their workflows
+- **Billing portal** - View invoices, update payment methods
+- **SE communication** - Message assigned Solutions Engineers
+
+**Access Control**:
+```typescript
+// Client app should check for client role and enforce data isolation
+const clientRole = 'client' as const
+
+// Row Level Security ensures clients only see their own data
+// All queries automatically filtered by client_id
+```
+
+## Shared Database Architecture
+
+### **Single Supabase Instance**
+Both apps connect to the **same Supabase project** with different access patterns:
+
+```typescript
+// packages/database/src/index.ts
+import { createBrowserClient, createServerClient } from '@supabase/ssr'
+
+// Shared database configuration
+export const SUPABASE_CONFIG = {
+  url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!, // Admin app only
+}
+
+// Browser client (used by both apps)
+export function createClient() {
+  return createBrowserClient(
+    SUPABASE_CONFIG.url,
+    SUPABASE_CONFIG.anonKey
+  )
+}
+
+// Server client with RLS (respects user permissions)
+export function createServerClient(cookieStore: any) {
+  return createServerClient(
+    SUPABASE_CONFIG.url,
+    SUPABASE_CONFIG.anonKey,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {}
+        },
+      },
+    }
+  )
+}
+
+// Service role client (admin app only - bypasses RLS)
+export function createServiceClient() {
+  return createBrowserClient(
+    SUPABASE_CONFIG.url,
+    SUPABASE_CONFIG.serviceRoleKey // Only for admin operations
+  )
+}
+```
+
+### **Row Level Security (RLS) Policies**
+Database enforces access control automatically:
+
+```sql
+-- Users table policies
+CREATE POLICY "Admins see all users" ON users
+  FOR SELECT USING (
+    EXISTS(
+      SELECT 1 FROM auth.users
+      WHERE auth.users.id = auth.uid()
+      AND auth.users.raw_user_meta_data->>'role' IN ('admin', 'se')
+    )
+  );
+
+CREATE POLICY "Clients see own data" ON users
+  FOR SELECT USING (
+    client_id = (auth.jwt()->>'client_id')::uuid
+    AND auth.jwt()->>'role' = 'client'
+  );
+
+-- Workflows table policies
+CREATE POLICY "Admins see all workflows" ON workflows
+  FOR SELECT USING (
+    EXISTS(
+      SELECT 1 FROM auth.users
+      WHERE auth.users.id = auth.uid()
+      AND auth.users.raw_user_meta_data->>'role' IN ('admin', 'se')
+    )
+  );
+
+CREATE POLICY "SEs see assigned client workflows" ON workflows
+  FOR SELECT USING (
+    client_id IN (
+      SELECT client_id FROM se_assignments
+      WHERE se_id = auth.uid()
+    )
+    AND EXISTS(
+      SELECT 1 FROM auth.users
+      WHERE auth.users.id = auth.uid()
+      AND auth.users.raw_user_meta_data->>'role' = 'se'
+    )
+  );
+
+CREATE POLICY "Clients see own workflows" ON workflows
+  FOR SELECT USING (
+    client_id = (auth.jwt()->>'client_id')::uuid
+    AND auth.jwt()->>'role' = 'client'
+  );
+```
+
+## Shared Packages
+
+### **`packages/database/`** - Database Layer
+```typescript
+// packages/database/package.json
+{
+  "name": "@nexus/database",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./queries": "./src/queries.ts"
+  }
+}
+
+// Shared across both apps
+import { createClient, createServerClient } from '@nexus/database'
+import type { Client, Workflow, Exception } from '@nexus/database/types'
+```
+
+### **`packages/ui/`** - Shared Components
+```typescript
+// packages/ui/package.json
+{
+  "name": "@nexus/ui",
+  "exports": {
+    "./components": "./src/components/index.ts",
+    "./styles": "./src/styles/globals.css"
+  }
+}
+
+// Components used by both apps but with different contexts
+import {
+  WorkflowCard,      // Shows different data based on user role
+  ExceptionTable,    // Filtered by RLS automatically
+  ClientSelector,    // Admin sees all, client sees own
+  DataCard
+} from '@nexus/ui/components'
+```
+
+### **`packages/auth/`** - Authentication Logic
+```typescript
+// packages/auth/src/permissions.ts
+export function hasAdminAccess(user: User): boolean {
+  return user.role === 'admin'
+}
+
+export function hasSEAccess(user: User): boolean {
+  return ['admin', 'se'].includes(user.role)
+}
+
+export function canViewClient(user: User, clientId: string): boolean {
+  if (user.role === 'admin') return true
+  if (user.role === 'se') return user.assignedClients?.includes(clientId) ?? false
+  if (user.role === 'client') return user.clientId === clientId
+  return false
+}
+```
+
+## Development Patterns
+
+### **App-Specific Logic**
+```typescript
+// apps/admin/lib/queries.ts - Admin can use service role for broader access
+export async function getAllClientsWithMetrics() {
+  const supabase = createServiceClient() // Bypasses RLS
+
+  const { data, error } = await supabase
+    .from('clients')
+    .select(`
+      *,
+      workflows(count),
+      exceptions(count),
+      users(count)
+    `)
+
+  if (error) throw error
+  return data
+}
+
+// apps/client/lib/queries.ts - Client queries automatically filtered by RLS
+export async function getMyWorkflows() {
+  const supabase = createServerClient(cookies()) // RLS enforced
+
+  const { data, error } = await supabase
+    .from('workflows')
+    .select('*') // Automatically filtered to user's client_id
+
+  if (error) throw error
+  return data
+}
+```
+
+### **Routing Patterns**
+```typescript
+// apps/admin/middleware.ts
+export function middleware(request: NextRequest) {
+  // Admin app requires admin/se roles
+  const user = getUserFromRequest(request)
+
+  if (!user || !['admin', 'se'].includes(user.role)) {
+    return NextResponse.redirect('/login')
+  }
+
+  return NextResponse.next()
+}
+
+// apps/client/middleware.ts
+export function middleware(request: NextRequest) {
+  // Client app requires client role
+  const user = getUserFromRequest(request)
+
+  if (!user || user.role !== 'client') {
+    return NextResponse.redirect('/login')
+  }
+
+  return NextResponse.next()
+}
+```
+
+## Deployment Strategy
+
+### **Environment Variables**
+Both apps share the same Supabase instance:
+
+```bash
+# Shared across both apps
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...your-anon-key
+
+# Admin app only (for service role operations)
+SUPABASE_SERVICE_ROLE_KEY=eyJ...your-service-role-key
+```
+
+### **Vercel Deployment**
+```typescript
+// vercel.json
+{
+  "projects": [
+    {
+      "name": "nexus-admin",
+      "source": "apps/admin",
+      "framework": "nextjs"
+    },
+    {
+      "name": "nexus-client",
+      "source": "apps/client",
+      "framework": "nextjs"
+    }
+  ]
+}
+```
+
+## Key Implementation Rules
+
+### **1. Data Access Patterns**
+- **Admin app**: Can use service role for broad access, but prefer RLS when possible
+- **Client app**: MUST use RLS exclusively, never bypass security
+- **Shared queries**: Create functions that work with both access patterns
+
+### **2. Component Sharing**
+- **Share UI components** but make them role-aware
+- **Different data sources** based on user permissions
+- **Consistent design** across both applications
+
+### **3. Authentication Flow**
+- **Same Supabase Auth** instance for both apps
+- **Role-based redirects** after login
+- **Shared session management** via packages
+
+### **4. Database Migrations**
+- **Single migration folder** in `/supabase/migrations/`
+- **Both apps use same schema** with RLS for access control
+- **Shared type generation** in `packages/database`
+
+This architecture ensures **data consistency**, **proper access control**, and **code reusability** while maintaining clear separation between admin and client experiences.

@@ -1,0 +1,377 @@
+---
+description: Next.js 15+ App Router specific development guidelines for Nexus platform
+globs: ["**/*.{ts,tsx}", "app/**/*"]
+dependencies: ["000-core.mdc"]
+alwaysApply: false
+priority: 90
+---
+
+# Next.js 15+ App Router Guidelines
+
+## Critical Next.js Rules
+
+### App Router Requirements
+- **ALWAYS use App Router**, never Pages Router
+- Use `app/` directory structure exclusively
+- Implement proper Server Components by default
+- Use Client Components (`'use client'`) only when necessary
+
+### Monorepo File Structure Patterns
+```typescript
+// Admin App Structure
+// apps/admin/app/layout.tsx - Admin root layout
+// apps/admin/app/page.tsx - Admin home/redirect
+// apps/admin/app/dashboard/page.tsx - Admin dashboard
+// apps/admin/app/clients/page.tsx - Client management
+// apps/admin/app/users/page.tsx - User management
+// apps/admin/app/api/trpc/[trpc]/route.ts - Admin tRPC routes
+
+// Client App Structure
+// apps/client/app/layout.tsx - Client root layout
+// apps/client/app/page.tsx - Client home/redirect
+// apps/client/app/dashboard/page.tsx - Client dashboard
+// apps/client/app/workflows/page.tsx - Client workflows
+// apps/client/app/api/trpc/[trpc]/route.ts - Client tRPC routes
+```
+
+### Server vs Client Components
+- **Default to Server Components** for better performance
+- Use Server Components for:
+  - Static content and layouts
+  - Data fetching with direct database queries
+  - SEO-critical pages
+- Use Client Components for:
+  - Interactive elements (forms, buttons with state)
+  - Hooks (useState, useEffect, React Query)
+  - Browser APIs access
+
+### App-Specific Data Fetching Patterns
+
+#### **Admin App (`apps/admin/`)**
+```typescript
+// Admin can use service role for broader access
+// apps/admin/lib/queries.ts
+import { createServiceClient } from '@nexus/database'
+
+export default async function AdminDashboardPage() {
+  // Admin can fetch data across all clients
+  const supabase = createServiceClient() // Broader access
+  const clients = await supabase.from('clients').select('*')
+
+  return <AdminDashboard clients={clients} />
+}
+
+// Admin tRPC router with elevated permissions
+// apps/admin/server/routers/admin.ts
+export const adminRouter = router({
+  getAllClients: protectedProcedure
+    .meta({ requiredRoles: ['admin', 'se'] })
+    .query(async ({ ctx }) => {
+      // Can use service role if needed
+      const supabase = createServiceClient()
+      return supabase.from('clients').select('*')
+    })
+})
+```
+
+#### **Client App (`apps/client/`)**
+```typescript
+// Client app enforces strict RLS
+// apps/client/app/dashboard/page.tsx
+import { createClient } from '@nexus/database'
+
+export default async function ClientDashboardPage() {
+  // Client queries automatically filtered by RLS
+  const supabase = createClient() // RLS enforced
+  const workflows = await supabase.from('workflows').select('*')
+
+  return <ClientDashboard workflows={workflows} />
+}
+
+// Client tRPC router with restricted access
+// apps/client/server/routers/client.ts
+export const clientRouter = router({
+  getMyWorkflows: protectedProcedure
+    .meta({ requiredRoles: ['client'] })
+    .query(async ({ ctx }) => {
+      // Always use RLS client - never service role
+      const supabase = createClient()
+      return supabase.from('workflows').select('*') // Auto-filtered
+    })
+})
+```
+
+#### **Shared Components with Role Context**
+```typescript
+// Both apps can use shared components with different data
+'use client'
+import { WorkflowCard } from '@nexus/ui/components'
+import { useUser } from '@nexus/auth'
+
+export function WorkflowList() {
+  const { user } = useUser()
+  const { data: workflows } = useQuery({
+    queryKey: ['workflows'],
+    queryFn: fetchWorkflows // Different implementation per app
+  })
+
+  return (
+    <div>
+      {workflows?.map(workflow => (
+        <WorkflowCard
+          key={workflow.id}
+          workflow={workflow}
+          user={user} // Component adapts based on user role
+          showClientName={user.role !== 'client'}
+          allowEdit={user.role !== 'client'}
+        />
+      ))}
+    </div>
+  )
+}
+```
+
+### App-Specific Route Organization
+
+#### **Admin App Routes**
+```typescript
+// apps/admin/app/layout.tsx - Admin layout with navigation
+// apps/admin/app/dashboard/page.tsx - System overview
+// apps/admin/app/clients/page.tsx - All clients table
+// apps/admin/app/clients/[id]/page.tsx - Client detail view
+// apps/admin/app/clients/[id]/workflows/page.tsx - Client workflows
+// apps/admin/app/users/page.tsx - User management
+// apps/admin/app/exceptions/page.tsx - All exceptions
+// apps/admin/app/billing/page.tsx - Billing management
+// apps/admin/app/billing/plans/page.tsx - Subscription plans
+
+// Admin-specific loading and error boundaries
+// apps/admin/app/clients/loading.tsx - Client list loading
+// apps/admin/app/error.tsx - Admin error boundary
+```
+
+#### **Client App Routes**
+```typescript
+// apps/client/app/layout.tsx - Client layout with limited nav
+// apps/client/app/dashboard/page.tsx - Client overview
+// apps/client/app/workflows/page.tsx - Own workflows only
+// apps/client/app/workflows/[id]/page.tsx - Workflow detail
+// apps/client/app/reporting/page.tsx - Usage reporting
+// apps/client/app/exceptions/page.tsx - Own exceptions only
+// apps/client/app/billing/page.tsx - Subscription view (read-only)
+// apps/client/app/credentials/page.tsx - 3rd party integrations
+
+// Client-specific loading and error boundaries
+// apps/client/app/workflows/loading.tsx - Workflow list loading
+// apps/client/app/error.tsx - Client error boundary
+```
+
+#### **Shared Route Patterns**
+```typescript
+// Both apps use similar patterns but with different data access
+// Use parallel routes for complex layouts
+// apps/admin/app/clients/[id]/@workflows/page.tsx
+// apps/admin/app/clients/[id]/@users/page.tsx
+
+// Implement proper not-found.tsx pages
+// apps/admin/app/not-found.tsx - Admin 404
+// apps/client/app/not-found.tsx - Client 404
+```
+
+### App-Specific Middleware Implementation
+
+#### **Admin App Middleware**
+```typescript
+// apps/admin/middleware.ts
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next()
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Admin app requires admin or SE role
+  if (!user || !['admin', 'se'].includes(user.user_metadata?.role)) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // SEs can only access assigned clients
+  if (user.user_metadata?.role === 'se') {
+    const url = request.nextUrl.pathname
+    if (url.includes('/clients/') && url !== '/clients') {
+      const clientId = url.split('/clients/')[1]?.split('/')[0]
+      if (clientId && !user.user_metadata?.assigned_clients?.includes(clientId)) {
+        return NextResponse.redirect(new URL('/unauthorized', request.url))
+      }
+    }
+  }
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|login|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}
+```
+
+#### **Client App Middleware**
+```typescript
+// apps/client/middleware.ts
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next()
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Client app requires client role only
+  if (!user || user.user_metadata?.role !== 'client') {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|login|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}
+```
+
+### Performance Optimization
+- Use `dynamic` imports for code splitting
+- Implement proper `loading.tsx` files
+- Use `Suspense` boundaries effectively
+- Optimize images with `next/image`
+- Implement proper caching strategies
+
+### Monorepo Environment Variables
+```typescript
+// Both apps share core Supabase config
+// apps/admin/.env.local
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...your-anon-key
+
+# Admin app gets additional service role access
+SUPABASE_SERVICE_ROLE_KEY=eyJ...your-service-role-key
+NEXT_PUBLIC_APP_NAME=Nexus Admin
+NEXT_PUBLIC_APP_URL=https://admin.nexus.com
+
+// apps/client/.env.local
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...your-anon-key
+
+# Client app does NOT get service role key
+NEXT_PUBLIC_APP_NAME=Nexus Client Portal
+NEXT_PUBLIC_APP_URL=https://portal.nexus.com
+
+// Root .env.local (for packages)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=eyJ...your-service-role-key
+```
+
+### Error Handling
+- Implement global error boundaries
+- Use proper error.tsx files in app routes
+- Handle loading states with loading.tsx
+- Create custom 404 pages with not-found.tsx
+
+### App-Specific SEO and Metadata
+```typescript
+// apps/admin/app/layout.tsx - Admin app metadata
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: {
+    template: '%s | Nexus Admin',
+    default: 'Nexus Admin - Workflow Management Platform'
+  },
+  description: 'Administrative interface for Braintrust Nexus platform',
+  robots: 'noindex, nofollow', // Admin should not be indexed
+}
+
+// apps/admin/app/dashboard/page.tsx
+export const metadata: Metadata = {
+  title: 'Dashboard',
+  description: 'System overview and analytics dashboard',
+}
+
+// apps/client/app/layout.tsx - Client app metadata
+export const metadata: Metadata = {
+  title: {
+    template: '%s | Nexus Portal',
+    default: 'Nexus Portal - Client Dashboard'
+  },
+  description: 'Client portal for Braintrust Nexus workflow automation',
+}
+
+// apps/client/app/workflows/page.tsx
+export const metadata: Metadata = {
+  title: 'My Workflows',
+  description: 'View and manage your automated workflows',
+}
+```
+
+## Monorepo Anti-Patterns to Avoid
+
+### **File Structure Mistakes**
+- ❌ Don't use route groups `(admin)` and `(client)` in monorepo - use separate apps
+- ❌ Don't put both admin and client routes in same app directory
+- ❌ Don't share middleware between apps - each needs its own access control
+- ❌ Don't use single layout for both admin and client - different navigation needed
+
+### **Data Access Mistakes**
+- ❌ Admin app: Don't always use service role - prefer RLS when possible
+- ❌ Client app: NEVER use service role - always enforce RLS
+- ❌ Don't share tRPC routers between apps - different permission models
+- ❌ Don't bypass RLS in client app even for "read-only" data
+
+### **Import Mistakes**
+- ❌ Don't import from other apps: `import from '../../admin/...'`
+- ❌ Use packages instead: `import from '@nexus/database'`
+- ❌ Don't duplicate code between apps - extract to packages
+- ❌ Don't import server code in client components across app boundaries
