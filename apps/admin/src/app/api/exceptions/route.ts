@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server'
 import { elevateForAdminOps, getSupabaseAndUser, requireAdminOrSE } from '@/src/lib/auth'
 
+type DbExceptionRow = {
+  id: string
+  reported_at: string
+  client_id: string
+  workflow_id: string
+  type: string
+  severity: string
+  status: string
+  remedy: string | null
+  clients?: { name: string } | null
+  workflows?: { name: string; department: string } | null
+}
+
 export async function GET(request: Request) {
   const { supabase: baseClient, dbUser } = await getSupabaseAndUser()
   if (!requireAdminOrSE(dbUser)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -25,7 +38,7 @@ export async function GET(request: Request) {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-  const rows = (data ?? []).map((r: any) => ({
+  const rows = (Array.isArray(data) ? (data as unknown as DbExceptionRow[]) : []).map((r) => ({
     id: r.id,
     reported_at: r.reported_at,
     client_id: r.client_id,
@@ -41,5 +54,3 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ data: rows })
 }
-
-

@@ -11,9 +11,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
     .from('client_pipeline_phases')
     .update({ completed_at: new Date().toISOString() })
     .eq('id', phaseId)
+    .eq('client_id', params.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ success: true })
 }
-
-

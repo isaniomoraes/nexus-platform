@@ -145,7 +145,7 @@ export default function ClientOverviewPage() {
 
         <div className="space-y-4">
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-6">
               <CardTitle>Document Links</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3">
