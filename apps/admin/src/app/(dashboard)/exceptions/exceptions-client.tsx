@@ -99,12 +99,12 @@ export default function ExceptionsClient() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Datetime reported</TableHead>
-              <TableHead>Client name</TableHead>
+              <TableHead>Reported at</TableHead>
+              <TableHead>Client</TableHead>
               <TableHead>Department</TableHead>
-              <TableHead>Workflow name</TableHead>
+              <TableHead>Workflow</TableHead>
               {/* Removed Notifications per PRD clarification */}
-              <TableHead>Exception type</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Severity</TableHead>
               <TableHead>Remedy</TableHead>
               <TableHead>Status</TableHead>

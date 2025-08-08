@@ -404,7 +404,7 @@ export default function SubscriptionsClient() {
         </Sheet>
       </div>
 
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+      <div className="w-full">
         {plans.length === 0 ? (
           <div className="p-6">
             <EmptyCta
