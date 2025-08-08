@@ -26,7 +26,7 @@ export function PageTitle(props: PageTitleProps = {}) {
 
   // Merge props with context, props take precedence
   const { title, compact = false } = { ...contextValue, ...props }
-  const currentPageTitle = title || routeMap[pathname] || 'Page'
+  const currentPageTitle = title || routeMap[pathname] || ''
 
   return (
     <div>

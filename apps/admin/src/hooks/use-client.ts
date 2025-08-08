@@ -41,6 +41,7 @@ export interface ClientOverview {
 
 export interface ClientWorkflowRow {
   id: string
+  client_id: string
   created_at: string
   department: string
   name: string
@@ -49,6 +50,11 @@ export interface ClientWorkflowRow {
   node_count: number
   execution_count: number
   exception_count: number
+  time_saved_per_execution: number
+  money_saved_per_execution: number
+  reporting_link?: string | null
+  roi_link?: string | null
+  documentation_link?: string | null
 }
 
 export function useClientOverview(clientId: string) {

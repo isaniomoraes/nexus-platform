@@ -14,6 +14,7 @@ import {
 } from '@nexus/ui/components'
 import Link from 'next/link'
 import { Building2Icon, CirclePlusIcon } from 'lucide-react'
+import { format } from 'date-fns'
 
 export default function ClientsList({
   showAddButton = true,
@@ -98,9 +99,7 @@ export default function ClientsList({
                   </Link>
                 </TableCell>
                 <TableCell>
-                  {c.contract_start_date
-                    ? new Date(c.contract_start_date).toLocaleDateString()
-                    : '—'}
+                  {c.contract_start_date ? format(new Date(c.contract_start_date), 'MMM dd, yyyy') : '—'}
                 </TableCell>
                 <TableCell className="text-right">{c.workflowsCount}</TableCell>
                 <TableCell className="text-right">{c.executionsCount}</TableCell>

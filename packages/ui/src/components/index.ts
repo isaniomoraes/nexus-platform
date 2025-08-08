@@ -17,6 +17,8 @@ export * from './ui/select'
 export * from './ui/card'
 export * from './ui/empty-cta'
 export * from './ui/checkbox'
+export * from './ui/switch'
+export * from './ui/badge'
 
 // Hooks
 export * from '../hooks/use-mobile'
