@@ -1,7 +1,7 @@
 export const USER_ROLES = {
   ADMIN: 'admin',
   SE: 'se',
-  CLIENT: 'client'
+  CLIENT: 'client',
 } as const
 
 export const EXCEPTION_TYPES = {
@@ -9,21 +9,21 @@ export const EXCEPTION_TYPES = {
   DATA_PROCESS: 'data_process',
   INTEGRATION: 'integration',
   WORKFLOW_LOGIC: 'workflow_logic',
-  BROWSER_AUTOMATION: 'browser_automation'
+  BROWSER_AUTOMATION: 'browser_automation',
 } as const
 
 export const EXCEPTION_SEVERITY = {
   CRITICAL: 'critical',
   HIGH: 'high',
   MEDIUM: 'medium',
-  LOW: 'low'
+  LOW: 'low',
 } as const
 
 export const EXCEPTION_STATUS = {
   NEW: 'new',
   IN_PROGRESS: 'in_progress',
   RESOLVED: 'resolved',
-  IGNORED: 'ignored'
+  IGNORED: 'ignored',
 } as const
 
 export const PIPELINE_PHASES = [
@@ -37,11 +37,11 @@ export const PIPELINE_PHASES = [
   'Factory build initiated',
   'Test plan generated',
   'Testing started',
-  'Production deploy'
+  'Production deploy',
 ] as const
 
 export const SUBSCRIPTION_PLANS = {
   BASIC: 'basic',
   PROFESSIONAL: 'professional',
-  ENTERPRISE: 'enterprise'
+  ENTERPRISE: 'enterprise',
 } as const

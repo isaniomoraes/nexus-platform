@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { createColumnHelper } from '@tanstack/react-table'
 
@@ -19,9 +19,13 @@ export const userColumns = [
   columnHelper.accessor('name', { header: 'Name' }),
   columnHelper.accessor('email', { header: 'Email' }),
   columnHelper.accessor('phone', { header: 'Phone' }),
-  columnHelper.accessor('role', { header: 'Role', cell: info => info.getValue().toUpperCase() }),
-  columnHelper.accessor('hourly_cost_rate', { header: 'Cost Rate', cell: info => info.getValue() ? `$${info.getValue()}/hr` : '-' }),
-  columnHelper.accessor('hourly_bill_rate', { header: 'Bill Rate', cell: info => info.getValue() ? `$${info.getValue()}/hr` : '-' }),
+  columnHelper.accessor('role', { header: 'Role', cell: (info) => info.getValue().toUpperCase() }),
+  columnHelper.accessor('hourly_cost_rate', {
+    header: 'Cost Rate',
+    cell: (info) => (info.getValue() ? `$${info.getValue()}/hr` : '-'),
+  }),
+  columnHelper.accessor('hourly_bill_rate', {
+    header: 'Bill Rate',
+    cell: (info) => (info.getValue() ? `$${info.getValue()}/hr` : '-'),
+  }),
 ]
-
-

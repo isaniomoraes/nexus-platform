@@ -1,3 +1,3 @@
 module.exports = {
-  extends: ["@nexus/eslint-config"],
+  extends: ['@nexus/eslint-config'],
 }

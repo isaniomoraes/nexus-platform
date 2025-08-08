@@ -11,7 +11,8 @@ export default function MessagingPage() {
       <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
         <h3 className="text-lg font-semibold mb-4">Communication Hub</h3>
         <p className="text-muted-foreground">
-          Messaging interface will be implemented here. This will include chat threads, notification management, and communication history.
+          Messaging interface will be implemented here. This will include chat threads, notification
+          management, and communication history.
         </p>
       </div>
     </div>

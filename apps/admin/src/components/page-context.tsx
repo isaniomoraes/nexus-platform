@@ -20,15 +20,17 @@ export function PageProvider({
   title,
   description,
   showBreadcrumbs,
-  compact
+  compact,
 }: PageProviderProps) {
   return (
-    <PageContext.Provider value={{
-      title,
-      description,
-      showBreadcrumbs,
-      compact
-    }}>
+    <PageContext.Provider
+      value={{
+        title,
+        description,
+        showBreadcrumbs,
+        compact,
+      }}
+    >
       {children}
     </PageContext.Provider>
   )

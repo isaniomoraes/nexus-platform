@@ -1,6 +1,6 @@
-"use client";
+'use client'
 
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react'
 import {
   Button,
   DropdownMenu,
@@ -22,44 +22,32 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
-} from "@nexus/ui/components";
-import {
-  EllipsisIcon,
-  PencilIcon,
-  Plus,
-  TrashIcon,
-  UserIcon,
-} from "lucide-react";
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-} from "@tanstack/react-table";
-import { userColumns } from "./components/user-columns";
-import { useUsers, useDeleteUser, useUpsertUser } from "@/src/hooks/use-users";
-import { useMe } from "@/src/hooks/use-me";
-import { UserEditor, type UserEditorValue } from "./components/user-editor";
+} from '@nexus/ui/components'
+import { EllipsisIcon, PencilIcon, Plus, TrashIcon, UserIcon } from 'lucide-react'
+import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table'
+import { userColumns } from './components/user-columns'
+import { useUsers, useDeleteUser, useUpsertUser } from '@/src/hooks/use-users'
+import { useMe } from '@/src/hooks/use-me'
+import { UserEditor, type UserEditorValue } from './components/user-editor'
 
 export function UsersClient() {
-  const { data, isLoading } = useUsers();
-  const upsert = useUpsertUser();
-  const del = useDeleteUser();
-  const me = useMe();
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<UserEditorValue | undefined>(
-    undefined
-  );
-  const columns = useMemo(() => userColumns, []);
+  const { data, isLoading } = useUsers()
+  const upsert = useUpsertUser()
+  const del = useDeleteUser()
+  const me = useMe()
+  const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState<UserEditorValue | undefined>(undefined)
+  const columns = useMemo(() => userColumns, [])
   const table = useReactTable({
     data: data?.data ?? [],
     columns,
     getCoreRowModel: getCoreRowModel(),
-  });
+  })
 
-  function renderTable(role?: "admin" | "se") {
+  function renderTable(role?: 'admin' | 'se') {
     const rows = table
       .getRowModel()
-      .rows.filter((r) => (role ? (r.original as any).role === role : true));
+      .rows.filter((r) => (role ? (r.original as { role: 'admin' | 'se' }).role === role : true))
     return (
       <div className="overflow-hidden">
         <Table>
@@ -70,10 +58,7 @@ export function UsersClient() {
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                      : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
                 <TableHead className="w-24"></TableHead>
@@ -83,17 +68,13 @@ export function UsersClient() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length + 1}
-                  className="px-3 py-6 text-muted-foreground">
+                <TableCell colSpan={columns.length + 1} className="px-3 py-6 text-muted-foreground">
                   Loading...
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length + 1}
-                  className="px-3 py-6 text-muted-foreground">
+                <TableCell colSpan={columns.length + 1} className="px-3 py-6 text-muted-foreground">
                   No users found
                 </TableCell>
               </TableRow>
@@ -102,10 +83,7 @@ export function UsersClient() {
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                   <TableCell className="text-right">
@@ -119,11 +97,10 @@ export function UsersClient() {
                         <DropdownMenuItem
                           className="flex items-center gap-2 cursor-pointer"
                           onClick={() => {
-                            setEditing(
-                              row.original as unknown as UserEditorValue
-                            );
-                            setOpen(true);
-                          }}>
+                            setEditing(row.original as unknown as UserEditorValue)
+                            setOpen(true)
+                          }}
+                        >
                           <PencilIcon className="size-4" />
                           Edit
                         </DropdownMenuItem>
@@ -131,9 +108,10 @@ export function UsersClient() {
                         <DropdownMenuItem
                           className="flex items-center gap-2 cursor-pointer text-destructive"
                           disabled={
-                            (row.original as any).id === me.data?.data.id
+                            (row.original as { id: string }).id === (me.data?.data.id ?? '')
                           }
-                          onClick={() => del.mutate(row.original.id as string)}>
+                          onClick={() => del.mutate(row.original.id as string)}
+                        >
                           <TrashIcon className="size-4" />
                           Delete
                         </DropdownMenuItem>
@@ -146,7 +124,7 @@ export function UsersClient() {
           </TableBody>
         </Table>
       </div>
-    );
+    )
   }
   return (
     <div className="space-y-4">
@@ -156,9 +134,10 @@ export function UsersClient() {
           size="sm"
           className="gap-2"
           onClick={() => {
-            setEditing(undefined);
-            setOpen(true);
-          }}>
+            setEditing(undefined)
+            setOpen(true)
+          }}
+        >
           <Plus className="h-4 w-4" /> Add New User
         </Button>
       </div>
@@ -170,8 +149,8 @@ export function UsersClient() {
           <TabsTrigger value="se">SE Users</TabsTrigger>
         </TabsList>
         <TabsContent value="all">{renderTable()}</TabsContent>
-        <TabsContent value="admin">{renderTable("admin")}</TabsContent>
-        <TabsContent value="se">{renderTable("se")}</TabsContent>
+        <TabsContent value="admin">{renderTable('admin')}</TabsContent>
+        <TabsContent value="se">{renderTable('se')}</TabsContent>
       </Tabs>
 
       <Sheet open={open} onOpenChange={setOpen}>
@@ -181,7 +160,7 @@ export function UsersClient() {
               <span className="size-6 bg-sidebar rounded-md flex items-center justify-center border">
                 <UserIcon className="size-4 text-sidebar-foreground" />
               </span>
-              {editing ? "Edit User" : "Add User"}
+              {editing ? 'Edit User' : 'Add User'}
             </SheetTitle>
           </SheetHeader>
           <div className="px-4 pb-4">
@@ -189,13 +168,13 @@ export function UsersClient() {
               initial={editing}
               onCancel={() => setOpen(false)}
               onSave={async (val) => {
-                await upsert.mutateAsync(val);
-                setOpen(false);
+                await upsert.mutateAsync(val)
+                setOpen(false)
               }}
             />
           </div>
         </SheetContent>
       </Sheet>
     </div>
-  );
+  )
 }

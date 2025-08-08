@@ -8,7 +8,6 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
   return (
     <div className="space-y-6">
-
       {/* Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
@@ -16,36 +15,28 @@ export default function DashboardPage() {
             <h3 className="text-sm font-medium">Total Clients</h3>
           </div>
           <div className="text-2xl font-bold">24</div>
-          <p className="text-xs text-muted-foreground">
-            +2 from last month
-          </p>
+          <p className="text-xs text-muted-foreground">+2 from last month</p>
         </div>
         <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
           <div className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h3 className="text-sm font-medium">Active Workflows</h3>
           </div>
           <div className="text-2xl font-bold">142</div>
-          <p className="text-xs text-muted-foreground">
-            +12% from last month
-          </p>
+          <p className="text-xs text-muted-foreground">+12% from last month</p>
         </div>
         <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
           <div className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h3 className="text-sm font-medium">Executions Today</h3>
           </div>
           <div className="text-2xl font-bold">1,247</div>
-          <p className="text-xs text-muted-foreground">
-            +18% from yesterday
-          </p>
+          <p className="text-xs text-muted-foreground">+18% from yesterday</p>
         </div>
         <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
           <div className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h3 className="text-sm font-medium">Open Exceptions</h3>
           </div>
           <div className="text-2xl font-bold">8</div>
-          <p className="text-xs text-muted-foreground">
-            -4 from yesterday
-          </p>
+          <p className="text-xs text-muted-foreground">-4 from yesterday</p>
         </div>
       </div>
 

@@ -7,30 +7,24 @@ import { ReactQueryProvider } from '../providers/react-query'
 const inter = Inter({
   subsets: ['latin'],
   fallback: ['system-ui', 'arial'],
-  display: 'swap'
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
   title: {
     template: '%s | Nexus Admin',
-    default: 'Nexus Admin - Workflow Management Platform'
+    default: 'Nexus Admin - Workflow Management Platform',
   },
   description: 'Administrative interface for Braintrust Nexus platform',
   robots: 'noindex, nofollow', // Admin should not be indexed
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased bg-sidebar`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <ReactQueryProvider>
-            {children}
-          </ReactQueryProvider>
+          <ReactQueryProvider>{children}</ReactQueryProvider>
         </ThemeProvider>
       </body>
     </html>

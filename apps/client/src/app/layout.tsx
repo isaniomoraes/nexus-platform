@@ -5,27 +5,21 @@ import './globals.css'
 const inter = Inter({
   subsets: ['latin'],
   fallback: ['system-ui', 'arial'],
-  display: 'swap'
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
   title: {
     template: '%s | Nexus Portal',
-    default: 'Nexus Portal - Client Dashboard'
+    default: 'Nexus Portal - Client Dashboard',
   },
   description: 'Client portal for Braintrust Nexus workflow automation',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        {children}
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }

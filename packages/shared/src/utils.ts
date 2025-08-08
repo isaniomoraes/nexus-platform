@@ -23,7 +23,7 @@ export function calculateTimeframe(period: string): { start: Date; end: Date } {
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD'
+    currency: 'USD',
   }).format(amount)
 }
 

@@ -9,10 +9,12 @@ This directory contains **Cursor AI rules** specifically designed for the Braint
 ## 📁 **Rules Structure**
 
 ### **Core Rules (Always Applied)**
+
 - **`000-core.mdc`** - Foundation principles, project overview, and essential patterns
 - **`005-monorepo.mdc`** - Monorepo architecture with `apps/admin` and `apps/client`
 
 ### **Technology-Specific Rules**
+
 - **`001-nextjs.mdc`** - Next.js 15+ App Router patterns for monorepo
 - **`002-supabase.mdc`** - Supabase SSR integration with shared database
 - **`003-typescript.mdc`** - TypeScript + Zod validation patterns
@@ -37,13 +39,16 @@ This directory contains **Cursor AI rules** specifically designed for the Braint
 ## 🚀 **Quick Setup**
 
 ### **1. Verify Rules Are Active**
+
 1. Open Cursor IDE
 2. Go to **Cursor Settings** → **Rules**
 3. Check that all `.mdc` files are listed under **Project Rules**
 4. Ensure `000-core.mdc` shows **"Always Apply: Yes"**
 
 ### **2. Test the Rules**
+
 Try asking Cursor:
+
 ```
 "Create an admin dashboard component for managing clients"
 "Set up a Supabase query for client workflows with RLS"
@@ -52,7 +57,9 @@ Try asking Cursor:
 ```
 
 ### **3. Verify Generated Code**
+
 Check that generated code:
+
 - ✅ Uses proper monorepo imports (`@nexus/ui`, `@nexus/database`)
 - ✅ Follows role-based access patterns (admin vs client)
 - ✅ Includes Zod validation and TypeScript types
@@ -73,6 +80,7 @@ Check that generated code:
 ## 🏢 **Architecture Overview**
 
 ### **Monorepo Structure**
+
 ```
 braintrust-nexus/
 ├── apps/
@@ -100,6 +108,7 @@ braintrust-nexus/
 ```
 
 ### **Data Access Patterns**
+
 - **Admin App**: Can use service role for broader access + RLS for user operations
 - **Client App**: Strict RLS enforcement only - never bypasses security
 - **Shared Database**: Single Supabase instance with Row Level Security policies
@@ -108,6 +117,7 @@ braintrust-nexus/
 ## 🔧 **Key Features**
 
 ### **Production-Ready Patterns**
+
 - **No `any` types** - strict TypeScript enforcement
 - **Zod-first validation** - schema-driven development
 - **Comprehensive testing** - unit, integration, and E2E
@@ -115,13 +125,16 @@ braintrust-nexus/
 - **Security first** - RLS, input validation, proper auth
 
 ### **Monorepo Best Practices**
+
 - **Code sharing** through packages without duplication
 - **Role-aware components** that adapt based on user permissions
 - **Consistent tooling** across all apps and packages
 - **Type safety** maintained across package boundaries
 
 ### **Take-Home Test Optimized**
+
 Rules are specifically designed for the three judging criteria:
+
 1. **Functionality** - Complete feature implementation
 2. **Code Quality** - Clean, maintainable, well-structured code
 3. **Design Quality** - Production-ready UI that matches requirements
@@ -129,18 +142,21 @@ Rules are specifically designed for the three judging criteria:
 ## 🐛 **Troubleshooting**
 
 ### **Rules Not Working?**
+
 1. **Check file names**: Must be exactly `000-core.mdc`, `001-nextjs.mdc`, etc.
 2. **Verify location**: Files must be in `.cursor/rules/` directory
 3. **Restart Cursor**: Sometimes needed after adding new rules
 4. **Check syntax**: MDC format requires proper YAML frontmatter
 
 ### **Generated Code Issues?**
+
 1. **Import errors**: Check that package dependencies are correct in root `package.json`
 2. **Type errors**: Ensure `@nexus/*` path mappings in `tsconfig.json`
 3. **Access control**: Verify user role checks and RLS policies
 4. **Database errors**: Check Supabase client configuration
 
 ### **Rule Conflicts?**
+
 1. **Priority order**: Higher numbers take precedence
 2. **Dependencies**: Check that prerequisite rules are present
 3. **File patterns**: Ensure `globs` patterns don't conflict
@@ -149,12 +165,14 @@ Rules are specifically designed for the three judging criteria:
 ## 📚 **Additional Resources**
 
 ### **Official Documentation**
+
 - [Cursor Rules Documentation](https://docs.cursor.com/en/context/rules)
 - [Next.js 15 Documentation](https://nextjs.org/docs)
 - [Supabase SSR Guide](https://supabase.com/docs/guides/auth/server-side/nextjs)
 - [Turborepo Documentation](https://turbo.build/repo/docs)
 
 ### **Community Resources**
+
 - [awesome-cursorrules](https://github.com/PatrickJS/awesome-cursorrules) - 879+ community rules
 - [Official Supabase AI Prompts](https://supabase.com/docs/guides/getting-started/ai-prompts)
 - [shadcn/ui Examples](https://ui.shadcn.com/examples)
@@ -162,13 +180,16 @@ Rules are specifically designed for the three judging criteria:
 ## 🔄 **Updates & Maintenance**
 
 ### **Rule Updates**
+
 - Rules are version-controlled with your project
 - Update rules as requirements change
 - Test rule changes with sample prompts
 - Keep rules focused and specific
 
 ### **New Features**
+
 When adding new features to Nexus:
+
 1. Update relevant `.mdc` files
 2. Add new patterns and examples
 3. Test with Cursor AI generation

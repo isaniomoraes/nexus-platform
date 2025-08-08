@@ -5,23 +5,19 @@ import { SUPABASE_CONFIG } from '@nexus/database'
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request })
 
-  const supabase = createServerClient(
-    SUPABASE_CONFIG.url,
-    SUPABASE_CONFIG.anonKey,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name, value, options) {
-          response.cookies.set({ name, value, ...options })
-        },
-        remove(name, options) {
-          response.cookies.set({ name, value: '', ...options })
-        },
+  const supabase = createServerClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
+    cookies: {
+      get(name: string) {
+        return request.cookies.get(name)?.value
       },
-    }
-  )
+      set(name, value, options) {
+        response.cookies.set({ name, value, ...options })
+      },
+      remove(name, options) {
+        response.cookies.set({ name, value: '', ...options })
+      },
+    },
+  })
 
   const { data } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
@@ -42,9 +38,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icons|images|api).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|images|api).*)'],
 }
-
-

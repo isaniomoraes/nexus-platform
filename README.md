@@ -33,6 +33,7 @@ This project implements a monorepo with two main applications:
 ### Installation
 
 1. **Clone and install dependencies:**
+
    ```bash
    git clone <repository-url>
    cd nexus-platform
@@ -44,6 +45,7 @@ This project implements a monorepo with two main applications:
    Create `.env.local` files in both apps:
 
    **apps/admin/.env.local:**
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -53,6 +55,7 @@ This project implements a monorepo with two main applications:
    ```
 
    **apps/client/.env.local:**
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -61,6 +64,7 @@ This project implements a monorepo with two main applications:
    ```
 
 3. **Set up Supabase database:**
+
    ```bash
    # If using Supabase CLI locally
    supabase start
@@ -71,6 +75,7 @@ This project implements a monorepo with two main applications:
    ```
 
 4. **Start development servers:**
+
    ```bash
    # Start both apps
    pnpm dev
@@ -112,6 +117,7 @@ nexus-platform/
 ## Features
 
 ### Admin Dashboard Features
+
 - **Dashboard**: System overview with metrics and activity
 - **Users**: Manage admin, SE, and client users
 - **Clients**: Client organization management
@@ -122,6 +128,7 @@ nexus-platform/
 - **Exceptions**: System-wide exception monitoring
 
 ### Sidebar Implementation
+
 - **Inset Variant**: Modern inset sidebar design matching the provided mockup
 - **Responsive**: Mobile-friendly with sheet overlay
 - **Collapsible**: Icon-only mode for more screen space
@@ -129,6 +136,7 @@ nexus-platform/
 - **Tooltip Support**: Helpful tooltips in collapsed mode
 
 ### Database Schema
+
 - **Row Level Security (RLS)**: Automatic data filtering by user role
 - **Role-based Access**: Admin, SE, and Client roles with appropriate permissions
 - **Audit Trails**: Automatic timestamps and change tracking
@@ -168,11 +176,13 @@ pnpm --filter @nexus/ui lint
 ## Deployment
 
 ### Environment Setup
+
 - **Admin App**: Requires service role key for elevated permissions
 - **Client App**: Uses only anon key with RLS enforcement
 - **Database**: Single Supabase instance with proper RLS policies
 
 ### Production Considerations
+
 - Enable RLS on all tables
 - Use environment-specific Supabase projects
 - Configure proper CORS and redirect URLs
@@ -181,11 +191,13 @@ pnpm --filter @nexus/ui lint
 ## Authentication & Authorization
 
 ### User Roles
+
 - **Admin**: Full system access, can bypass RLS when needed
 - **SE (Solutions Engineer)**: Access to assigned clients only
 - **Client**: Access to own organization data only
 
 ### Security Features
+
 - Row Level Security (RLS) policies
 - JWT-based authentication
 - Role-based route protection

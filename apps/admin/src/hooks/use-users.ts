@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -46,5 +46,3 @@ export function useDeleteUser() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   })
 }
-
-

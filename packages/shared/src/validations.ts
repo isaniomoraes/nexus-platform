@@ -1,5 +1,11 @@
 import { z } from 'zod'
-import { USER_ROLES, EXCEPTION_TYPES, EXCEPTION_SEVERITY, EXCEPTION_STATUS, SUBSCRIPTION_PLANS } from './constants'
+import {
+  USER_ROLES,
+  EXCEPTION_TYPES,
+  EXCEPTION_SEVERITY,
+  EXCEPTION_STATUS,
+  SUBSCRIPTION_PLANS,
+} from './constants'
 
 // Base schemas
 export const UserRoleSchema = z.enum([USER_ROLES.ADMIN, USER_ROLES.SE, USER_ROLES.CLIENT])
@@ -8,24 +14,24 @@ export const ExceptionTypeSchema = z.enum([
   EXCEPTION_TYPES.DATA_PROCESS,
   EXCEPTION_TYPES.INTEGRATION,
   EXCEPTION_TYPES.WORKFLOW_LOGIC,
-  EXCEPTION_TYPES.BROWSER_AUTOMATION
+  EXCEPTION_TYPES.BROWSER_AUTOMATION,
 ])
 export const ExceptionSeveritySchema = z.enum([
   EXCEPTION_SEVERITY.CRITICAL,
   EXCEPTION_SEVERITY.HIGH,
   EXCEPTION_SEVERITY.MEDIUM,
-  EXCEPTION_SEVERITY.LOW
+  EXCEPTION_SEVERITY.LOW,
 ])
 export const ExceptionStatusSchema = z.enum([
   EXCEPTION_STATUS.NEW,
   EXCEPTION_STATUS.IN_PROGRESS,
   EXCEPTION_STATUS.RESOLVED,
-  EXCEPTION_STATUS.IGNORED
+  EXCEPTION_STATUS.IGNORED,
 ])
 export const SubscriptionPlanSchema = z.enum([
   SUBSCRIPTION_PLANS.BASIC,
   SUBSCRIPTION_PLANS.PROFESSIONAL,
-  SUBSCRIPTION_PLANS.ENTERPRISE
+  SUBSCRIPTION_PLANS.ENTERPRISE,
 ])
 
 // Entity schemas
@@ -102,12 +108,14 @@ export const CreateClientSchema = ClientSchema.omit({
   created_at: true,
   updated_at: true,
 }).extend({
-  users: z.array(UserSchema.omit({
-    id: true,
-    client_id: true,
-    created_at: true,
-    updated_at: true,
-  })),
+  users: z.array(
+    UserSchema.omit({
+      id: true,
+      client_id: true,
+      created_at: true,
+      updated_at: true,
+    })
+  ),
 })
 
 export const UpdateWorkflowSchema = WorkflowSchema.partial().required({

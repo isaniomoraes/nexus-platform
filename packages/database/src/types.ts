@@ -11,7 +11,7 @@ export type {
   ExceptionStatus,
   SubscriptionPlan,
   CreateClientInput,
-  LoginInput
+  LoginInput,
 } from '@nexus/shared'
 
 // Database specific types
@@ -146,7 +146,12 @@ export interface Database {
           id: string
           client_id: string
           workflow_id: string
-          type: 'authentication' | 'data_process' | 'integration' | 'workflow_logic' | 'browser_automation'
+          type:
+            | 'authentication'
+            | 'data_process'
+            | 'integration'
+            | 'workflow_logic'
+            | 'browser_automation'
           severity: 'critical' | 'high' | 'medium' | 'low'
           status: 'new' | 'in_progress' | 'resolved' | 'ignored'
           message: string
@@ -158,7 +163,12 @@ export interface Database {
           id?: string
           client_id: string
           workflow_id: string
-          type: 'authentication' | 'data_process' | 'integration' | 'workflow_logic' | 'browser_automation'
+          type:
+            | 'authentication'
+            | 'data_process'
+            | 'integration'
+            | 'workflow_logic'
+            | 'browser_automation'
           severity: 'critical' | 'high' | 'medium' | 'low'
           status?: 'new' | 'in_progress' | 'resolved' | 'ignored'
           message: string
@@ -170,7 +180,12 @@ export interface Database {
           id?: string
           client_id?: string
           workflow_id?: string
-          type?: 'authentication' | 'data_process' | 'integration' | 'workflow_logic' | 'browser_automation'
+          type?:
+            | 'authentication'
+            | 'data_process'
+            | 'integration'
+            | 'workflow_logic'
+            | 'browser_automation'
           severity?: 'critical' | 'high' | 'medium' | 'low'
           status?: 'new' | 'in_progress' | 'resolved' | 'ignored'
           message?: string
@@ -219,6 +234,9 @@ export interface Database {
 }
 
 // Utility types
-export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
-export type TablesInsert<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
-export type TablesUpdate<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']
+export type Tables<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Row']
+export type TablesInsert<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Insert']
+export type TablesUpdate<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Update']

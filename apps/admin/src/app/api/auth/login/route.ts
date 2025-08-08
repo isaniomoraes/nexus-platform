@@ -3,7 +3,10 @@ import { z } from 'zod'
 import { createServerClient } from '@supabase/ssr'
 import { SUPABASE_CONFIG } from '@nexus/database'
 
-const LoginSchema = z.object({ email: z.string().email(), password: z.string().min(6) })
+const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+})
 
 export async function POST(request: Request) {
   const json = await request.json().catch(() => null)
@@ -13,8 +16,8 @@ export async function POST(request: Request) {
   const response = NextResponse.json({ ok: true })
   const supabase = createServerClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
     cookies: {
-      get(name: string) {
-        return request.headers.get('cookie') ?? null
+      get() {
+        return ''
       },
       set(name, value, options) {
         response.cookies.set({ name, value, ...options })
@@ -48,5 +51,3 @@ export async function POST(request: Request) {
   }
   return response
 }
-
-

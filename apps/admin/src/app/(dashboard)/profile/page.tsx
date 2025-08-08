@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useTheme } from 'next-themes'
 import { Separator, Label, Button, Input } from '@nexus/ui/components'
@@ -23,19 +23,27 @@ export default function ProfilePage() {
       <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm max-w-2xl">
         <div className="mb-4 space-y-1">
           <h3 className="text-base font-medium">Account</h3>
-          <p className="text-sm text-muted-foreground">
-            Update your personal information.
-          </p>
+          <p className="text-sm text-muted-foreground">Update your personal information.</p>
         </div>
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="firstName">First name</Label>
-              <Input id="firstName" name="firstName" placeholder="Jane" defaultValue={meData?.data.name?.split(' ')[0] ?? ''} />
+              <Input
+                id="firstName"
+                name="firstName"
+                placeholder="Jane"
+                defaultValue={meData?.data.name?.split(' ')[0] ?? ''}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="lastName">Last name</Label>
-              <Input id="lastName" name="lastName" placeholder="Doe" defaultValue={meData?.data.name?.split(' ').slice(1).join(' ') ?? ''} />
+              <Input
+                id="lastName"
+                name="lastName"
+                placeholder="Doe"
+                defaultValue={meData?.data.name?.split(' ').slice(1).join(' ') ?? ''}
+              />
             </div>
           </div>
           <div className="space-y-2">
@@ -51,16 +59,29 @@ export default function ProfilePage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">Phone</Label>
-            <Input id="phone" name="phone" placeholder="+1 234 567 8900" defaultValue={meData?.data.phone ?? ''} />
+            <Input
+              id="phone"
+              name="phone"
+              placeholder="+1 234 567 8900"
+              defaultValue={meData?.data.phone ?? ''}
+            />
           </div>
           <div className="flex justify-end">
-            <Button type="button" disabled={updateMe.isPending || isLoading} onClick={() => {
-              const form = (document.activeElement as HTMLElement)?.closest('form') as HTMLFormElement | null
-              const firstName = (document.getElementById('firstName') as HTMLInputElement | null)?.value ?? ''
-              const lastName = (document.getElementById('lastName') as HTMLInputElement | null)?.value ?? ''
-              const phone = (document.getElementById('phone') as HTMLInputElement | null)?.value ?? ''
-              updateMe.mutate({ firstName, lastName, phone })
-            }}>Save</Button>
+            <Button
+              type="button"
+              disabled={updateMe.isPending || isLoading}
+              onClick={() => {
+                const firstName =
+                  (document.getElementById('firstName') as HTMLInputElement | null)?.value ?? ''
+                const lastName =
+                  (document.getElementById('lastName') as HTMLInputElement | null)?.value ?? ''
+                const phone =
+                  (document.getElementById('phone') as HTMLInputElement | null)?.value ?? ''
+                updateMe.mutate({ firstName, lastName, phone })
+              }}
+            >
+              Save
+            </Button>
           </div>
         </div>
       </section>
@@ -71,39 +92,37 @@ export default function ProfilePage() {
       <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm max-w-2xl">
         <div className="mb-4 space-y-1">
           <h3 className="text-base font-medium">Appearance</h3>
-          <p className="text-sm text-muted-foreground">
-            Choose your preferred theme.
-          </p>
+          <p className="text-sm text-muted-foreground">Choose your preferred theme.</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <ThemeCard
             icon={<Monitor className="h-5 w-5" />}
             title="System"
             description="Match OS theme"
-            active={theme === "system"}
-            onClick={() => setTheme("system")}
+            active={theme === 'system'}
+            onClick={() => setTheme('system')}
             previewClass="bg-gradient-to-br from-background to-muted"
           />
           <ThemeCard
             icon={<Sun className="h-5 w-5" />}
             title="Light"
             description="Bright and clean"
-            active={current === "light"}
-            onClick={() => setTheme("light")}
+            active={current === 'light'}
+            onClick={() => setTheme('light')}
             previewClass="bg-gray-300 text-slate-900"
           />
           <ThemeCard
             icon={<Moon className="h-5 w-5" />}
             title="Dark"
             description="Dimmed for low light"
-            active={current === "dark"}
-            onClick={() => setTheme("dark")}
+            active={current === 'dark'}
+            onClick={() => setTheme('dark')}
             previewClass="bg-gray-900 text-slate-100"
           />
         </div>
       </section>
     </div>
-  );
+  )
 }
 
 function ThemeCard({
@@ -126,11 +145,9 @@ function ThemeCard({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={
-        `group relative flex flex-col items-stretch rounded-lg border p-3 text-left transition-all hover:shadow-sm ${
-          active ? 'border-ring ring-2 ring-ring' : 'border-border'
-        }`
-      }
+      className={`group relative flex flex-col items-stretch rounded-lg border p-3 text-left transition-all hover:shadow-sm ${
+        active ? 'border-ring ring-2 ring-ring' : 'border-border'
+      }`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -142,15 +159,13 @@ function ThemeCard({
             <div className="text-xs text-muted-foreground">{description}</div>
           </div>
         </div>
-        <span className={`inline-block size-2 rounded-full absolute right-2 top-2 ${active ? 'bg-ring' : 'bg-muted-foreground/40'}`} />
+        <span
+          className={`inline-block size-2 rounded-full absolute right-2 top-2 ${active ? 'bg-ring' : 'bg-muted-foreground/40'}`}
+        />
       </div>
 
       <div className="mt-3 rounded-md border bg-card p-2">
-        <div
-          className={
-            `grid h-16 grid-cols-3 gap-2 rounded-md p-2 text-xs ${previewClass}`
-          }
-        >
+        <div className={`grid h-16 grid-cols-3 gap-2 rounded-md p-2 text-xs ${previewClass}`}>
           <div className="rounded-sm border bg-background/70" />
           <div className="rounded-sm border bg-background/70" />
           <div className="rounded-sm border bg-background/70" />
@@ -160,5 +175,3 @@ function ThemeCard({
     </button>
   )
 }
-
-

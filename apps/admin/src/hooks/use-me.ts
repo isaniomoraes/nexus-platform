@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
@@ -32,5 +32,3 @@ export function useUpdateMe() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['me'] }),
   })
 }
-
-

@@ -8,9 +8,11 @@ export async function getSupabaseAndUser() {
     getAll: () => cookieStore.getAll(),
     setAll: (cookiesToSet) => {
       try {
-        cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options as Record<string, unknown>))
+        cookiesToSet.forEach(({ name, value, options }) =>
+          cookieStore.set(name, value, options as Record<string, unknown>)
+        )
       } catch {}
-    }
+    },
   })
   const { data: auth } = await supabase.auth.getUser()
   let dbUser: Tables<'users'> | null = null
@@ -25,5 +27,3 @@ export function requireAdminOrSE(user: Tables<'users'> | null) {
   if (!user) return false
   return user.role === 'admin' || user.role === 'se'
 }
-
-
