@@ -18,5 +18,3 @@ export const userUpsertSchema = z.object({
   assigned_clients: z.array(z.string().uuid()).optional(),
 })
 export type UserUpsertPayload = z.infer<typeof userUpsertSchema>
-
-

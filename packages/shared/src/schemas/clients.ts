@@ -35,5 +35,3 @@ export const clientRowSchema = z.object({
 })
 
 export type ClientRow = z.infer<typeof clientRowSchema>
-
-

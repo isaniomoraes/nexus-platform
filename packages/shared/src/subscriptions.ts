@@ -32,5 +32,3 @@ export const planRowSchema = planUpsertSchema.extend({
 })
 
 export type PlanRow = z.infer<typeof planRowSchema>
-
-

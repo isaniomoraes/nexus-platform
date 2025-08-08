@@ -2,10 +2,7 @@ import { NextResponse } from 'next/server'
 import { elevateForAdminOps, getSupabaseAndUser, requireAdminOrSE } from '@/src/lib/auth'
 import { workflowUpsertSchema } from '@nexus/shared'
 
-export async function GET(
-  _request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const { supabase: baseClient, dbUser } = await getSupabaseAndUser()
   if (!requireAdminOrSE(dbUser)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const supabase = elevateForAdminOps(baseClient, dbUser)
@@ -22,10 +19,7 @@ export async function GET(
   return NextResponse.json({ data })
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: Request, { params }: { params: { id: string } }) {
   const { supabase: baseClient, dbUser } = await getSupabaseAndUser()
   if (!requireAdminOrSE(dbUser)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const supabase = elevateForAdminOps(baseClient, dbUser)
@@ -55,5 +49,3 @@ export async function POST(
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ data })
 }
-
-

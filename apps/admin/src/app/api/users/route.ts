@@ -37,16 +37,11 @@ export async function POST(request: Request) {
   // Remove UI-only field if present
   delete (userWrite as { assigned_clients?: string[] }).assigned_clients
 
-
   if (payload.id) {
     const { error } = await supabase.from('users').update(userWrite).eq('id', payload.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   } else {
-    const { error } = await supabase
-      .from('users')
-      .insert(userWrite)
-      .select('id')
-      .single()
+    const { error } = await supabase.from('users').insert(userWrite).select('id').single()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     // created successfully
   }

@@ -98,7 +98,8 @@ export function useCompletePipelinePhase(clientId: string) {
       qc.invalidateQueries({ queryKey: ['client', clientId, 'overview'] })
       toast.success('Pipeline phase completed')
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to complete phase'),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : 'Failed to complete phase'),
   })
 }
 
@@ -118,8 +119,7 @@ export function useUpdateClientDocuments(clientId: string) {
       qc.invalidateQueries({ queryKey: ['client', clientId, 'overview'] })
       toast.success('Document links saved')
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to save documents'),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : 'Failed to save documents'),
   })
 }
-
-

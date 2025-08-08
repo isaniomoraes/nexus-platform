@@ -36,8 +36,7 @@ export function useUpdateExceptionStatus() {
       qc.invalidateQueries({ queryKey: ['exceptions'] })
       toast.success('Exception status updated')
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to update status'),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : 'Failed to update status'),
   })
 }
-
-

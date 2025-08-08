@@ -37,7 +37,8 @@ export function useCreateClient() {
       qc.invalidateQueries({ queryKey: ['clients', 'options'] })
       toast.success('Client created')
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to create client'),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : 'Failed to create client'),
   })
 }
 
@@ -60,6 +61,7 @@ export function useUpdateClient(clientId: string) {
       qc.invalidateQueries({ queryKey: ['clients', 'options'] })
       toast.success('Client updated')
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to update client'),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : 'Failed to update client'),
   })
 }

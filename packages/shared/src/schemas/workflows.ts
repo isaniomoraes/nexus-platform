@@ -35,5 +35,3 @@ export const workflowRowSchema = z.object({
 })
 
 export type WorkflowRow = z.infer<typeof workflowRowSchema>
-
-

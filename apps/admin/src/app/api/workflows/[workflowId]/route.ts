@@ -8,7 +8,10 @@ export async function PATCH(request: Request, { params }: { params: { workflowId
   const supabase = elevateForAdminOps(baseClient, dbUser)
 
   const json = await request.json()
-  const parsed = workflowUpsertSchema.partial().extend({ id: workflowUpsertSchema.shape.id }).safeParse({ ...json, id: params.workflowId })
+  const parsed = workflowUpsertSchema
+    .partial()
+    .extend({ id: workflowUpsertSchema.shape.id })
+    .safeParse({ ...json, id: params.workflowId })
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   const payload = parsed.data
 
@@ -38,13 +41,8 @@ export async function DELETE(_request: Request, { params }: { params: { workflow
   if (!requireAdminOrSE(dbUser)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const supabase = elevateForAdminOps(baseClient, dbUser)
 
-  const { error } = await supabase
-    .from('workflows')
-    .delete()
-    .eq('id', params.workflowId)
+  const { error } = await supabase.from('workflows').delete().eq('id', params.workflowId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ success: true })
 }
-
-

@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { WorkflowUpsertInput } from '@nexus/shared'
@@ -13,11 +13,19 @@ export function useUpsertWorkflow(clientId: string) {
     mutationFn: async (input: WorkflowEditInput | WorkflowCreateInput) => {
       const body = JSON.stringify({ ...input })
       if ('id' in input && input.id) {
-        const res = await fetch(`/api/workflows/${input.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body })
+        const res = await fetch(`/api/workflows/${input.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+        })
         if (!res.ok) throw new Error('Failed to update workflow')
         return res.json()
       }
-      const res = await fetch(`/api/clients/${clientId}/workflows`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
+      const res = await fetch(`/api/clients/${clientId}/workflows`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      })
       if (!res.ok) throw new Error('Failed to create workflow')
       return res.json()
     },
@@ -25,7 +33,8 @@ export function useUpsertWorkflow(clientId: string) {
       qc.invalidateQueries({ queryKey: ['client', clientId, 'workflows'] })
       toast.success('Workflow saved')
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to save workflow'),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : 'Failed to save workflow'),
   })
 }
 
@@ -41,8 +50,7 @@ export function useDeleteWorkflow(clientId: string) {
       qc.invalidateQueries({ queryKey: ['client', clientId, 'workflows'] })
       toast.success('Workflow deleted')
     },
-    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to delete workflow'),
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : 'Failed to delete workflow'),
   })
 }
-
-

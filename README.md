@@ -164,11 +164,13 @@ pnpm --filter @nexus/ui lint
 This repository uses pnpm workspaces. You can install packages in:
 
 - The whole workspace:
+
   ```bash
   pnpm install
   ```
 
 - A specific app (admin or client):
+
   ```bash
   pnpm --filter @nexus/admin add <pkg>@<version>
   pnpm --filter @nexus/client add <pkg>@<version>
@@ -181,6 +183,7 @@ This repository uses pnpm workspaces. You can install packages in:
   ```
 
 Notes:
+
 - Use the `--filter` flag to scope installation to a package.
 - When adding peer deps to shared packages, you usually don’t need to add them to apps unless they are runtime deps for the app.
 - For Radix-based shadcn components added to `@nexus/ui`, install the Radix package in that workspace, e.g.:

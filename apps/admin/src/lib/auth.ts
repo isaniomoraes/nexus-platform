@@ -38,7 +38,7 @@ export function requireAdmin(user: Tables<'users'> | null) {
 // - Otherwise returns the RLS client passed in (from getSupabaseAndUser)
 export function elevateForAdminOps(
   currentClient: ReturnType<typeof createServerClientWithCookies>,
-  user: Tables<'users'> | null,
+  user: Tables<'users'> | null
 ) {
   if (user?.role === 'admin' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return createServiceServerClient()

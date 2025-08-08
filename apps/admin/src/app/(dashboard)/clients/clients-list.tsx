@@ -99,7 +99,9 @@ export default function ClientsList({
                   </Link>
                 </TableCell>
                 <TableCell>
-                  {c.contract_start_date ? format(new Date(c.contract_start_date), 'MMM dd, yyyy') : '—'}
+                  {c.contract_start_date
+                    ? format(new Date(c.contract_start_date), 'MMM dd, yyyy')
+                    : '—'}
                 </TableCell>
                 <TableCell className="text-right">{c.workflowsCount}</TableCell>
                 <TableCell className="text-right">{c.executionsCount}</TableCell>

@@ -34,5 +34,3 @@ export const exceptionStatusUpdateSchema = z.object({
   status: z.enum(['new', 'in_progress', 'resolved', 'ignored']),
 })
 export type ExceptionStatusUpdate = z.infer<typeof exceptionStatusUpdateSchema>
-
-

@@ -39,7 +39,9 @@ export default function NewClientForm() {
   const createClient = useCreateClient()
   const users = useFieldArray<FormValues>({ control: form.control, name: 'users' })
   const deptList = form.watch('departments')
-  const validDepartments = (deptList ?? []).filter((d) => typeof d === 'string' && d.trim().length > 0)
+  const validDepartments = (deptList ?? []).filter(
+    (d) => typeof d === 'string' && d.trim().length > 0
+  )
   const seList = form.watch('assignedSEs')
   const seOptions = useSEOptions()
 
@@ -145,10 +147,14 @@ export default function NewClientForm() {
               <Select
                 disabled={validDepartments.length === 0}
                 value={form.watch(`users.${idx}.department`)}
-                onValueChange={(v) => form.setValue(`users.${idx}.department`, v, { shouldDirty: true })}
-             >
+                onValueChange={(v) =>
+                  form.setValue(`users.${idx}.department`, v, { shouldDirty: true })
+                }
+              >
                 <SelectTrigger className="md:col-span-1">
-                  <SelectValue placeholder={validDepartments.length ? 'Department' : 'Add dept first'} />
+                  <SelectValue
+                    placeholder={validDepartments.length ? 'Department' : 'Add dept first'}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {validDepartments.map((d, i) => (
