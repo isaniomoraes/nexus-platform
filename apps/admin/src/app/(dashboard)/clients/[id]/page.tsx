@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import DocumentLinksForm from './document-links-form'
+import { useCompletePipelinePhase } from '@/src/hooks/use-client'
 import { useClientOverview } from '@/src/hooks/use-client'
 import {
   Button,
@@ -9,8 +11,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Input,
-  Label,
   Skeleton,
   Table,
   TableBody,
@@ -24,6 +24,8 @@ export default function ClientOverviewPage() {
   const params = useParams<{ id: string }>()
   const clientId = params?.id
   const { data, isLoading } = useClientOverview(clientId)
+
+  const completePhase = useCompletePipelinePhase(clientId ?? '')
 
   if (isLoading) {
     return (
@@ -50,6 +52,11 @@ export default function ClientOverviewPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-medium">{client.name}</h1>
+        <Link href={`/clients/${client.id}/edit`}>
+          <Button variant="outline" size="sm">
+            Edit Client
+          </Button>
+        </Link>
       </div>
       <div className="border-b">
         <div className="flex gap-6 px-1">
@@ -141,6 +148,42 @@ export default function ClientOverviewPage() {
               </Table>
             </CardContent>
           </Card>
+
+          <div className="col-span-full">
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle>Pipeline Progress</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {data.pipeline.map((p, idx) => {
+                  const completed = !!p.completed_at
+                  const previousCompleted =
+                    idx === 0 ? true : !!data.pipeline[idx - 1]?.completed_at
+                  const isNext = !completed && previousCompleted
+                  return (
+                    <div key={p.id} className="flex items-center justify-start gap-3">
+                      <div
+                        className={`size-2 rounded-full ${completed ? 'bg-green-500' : 'bg-muted-foreground'}`}
+                      />
+                      <div>
+                        <div className="text-sm font-medium">{p.phase_name}</div>
+                        {completed && (
+                          <div className="text-xs text-muted-foreground">
+                            Completed {new Date(p.completed_at as string).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                      {isNext ? (
+                        <Button size="sm" onClick={() => completePhase.mutate(p.id)}>
+                          Complete
+                        </Button>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -148,103 +191,23 @@ export default function ClientOverviewPage() {
             <CardHeader className="pb-6">
               <CardTitle>Document Links</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-3">
-              {(
-                [
-                  ['survey_questions', 'Survey Questions'],
-                  ['survey_results', 'Survey Results'],
-                  ['process_documentation', 'Process Documentation'],
-                  ['ada_proposal', 'ADA Proposal'],
-                  ['contract', 'Contract'],
-                  ['factory_markdown', 'Factory Markdown'],
-                  ['test_plan', 'Test Plan'],
-                ] as const
-              ).map(([key, label]) => (
-                <div key={key} className="space-y-1">
-                  <Label htmlFor={key}>{label}</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id={key}
-                      defaultValue={
-                        (data.documents?.[key as keyof NonNullable<typeof data.documents>] as
-                          | string
-                          | undefined) ?? ''
+            <CardContent>
+              <DocumentLinksForm
+                clientId={client.id}
+                initial={
+                  data.documents
+                    ? {
+                        survey_questions: data.documents.survey_questions ?? undefined,
+                        survey_results: data.documents.survey_results ?? undefined,
+                        process_documentation: data.documents.process_documentation ?? undefined,
+                        ada_proposal: data.documents.ada_proposal ?? undefined,
+                        contract: data.documents.contract ?? undefined,
+                        factory_markdown: data.documents.factory_markdown ?? undefined,
+                        test_plan: data.documents.test_plan ?? undefined,
                       }
-                      placeholder="https://"
-                      onBlur={async (e) => {
-                        const value = e.currentTarget.value
-                        await fetch(`/api/clients/${client.id}/documents`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ [key]: value }),
-                        })
-                      }}
-                    />
-                    {(
-                      (data.documents?.[key as keyof NonNullable<typeof data.documents>] as
-                        | string
-                        | undefined) ?? ''
-                    ).length ? (
-                      <Link
-                        className="text-blue-600 text-sm"
-                        href={
-                          (data.documents?.[
-                            key as keyof NonNullable<typeof data.documents>
-                          ] as string) ?? '#'
-                        }
-                        target="_blank"
-                      >
-                        Open
-                      </Link>
-                    ) : null}
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="col-span-full">
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>Pipeline Progress</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {data.pipeline.map((p, idx) => {
-                const completed = !!p.completed_at
-                const previousCompleted = idx === 0 ? true : !!data.pipeline[idx - 1]?.completed_at
-                const isNext = !completed && previousCompleted
-                return (
-                  <div key={p.id} className="flex items-center gap-3">
-                    <div
-                      className={`size-2 rounded-full ${completed ? 'bg-green-500' : 'bg-muted-foreground'}`}
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{p.phase_name}</div>
-                      {completed && (
-                        <div className="text-xs text-muted-foreground">
-                          Completed {new Date(p.completed_at as string).toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                    {isNext ? (
-                      <Button
-                        size="sm"
-                        onClick={async () => {
-                          await fetch(`/api/clients/${client.id}/pipeline`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ phaseId: p.id }),
-                          })
-                          location.reload()
-                        }}
-                      >
-                        Complete
-                      </Button>
-                    ) : null}
-                  </div>
-                )
-              })}
+                    : null
+                }
+              />
             </CardContent>
           </Card>
         </div>

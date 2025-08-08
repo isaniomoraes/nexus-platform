@@ -1,6 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { z } from 'zod'
 import { planRowSchema, planUpsertSchema, type PlanUpsert } from '@nexus/shared'
 
@@ -30,7 +31,11 @@ export function useUpsertPlan() {
       if (!res.ok) throw new Error('Failed to save plan')
       return res.json()
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['plans'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plans'] })
+      toast.success('Plan saved')
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to save plan'),
   })
 }
 
@@ -42,6 +47,10 @@ export function useDeletePlan() {
       if (!res.ok) throw new Error('Failed to delete plan')
       return res.json()
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['plans'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['plans'] })
+      toast.success('Plan deleted')
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to delete plan'),
   })
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { z } from 'zod'
 import { clientRowSchema, createClientSchema, type ClientCreateInput } from '@nexus/shared'
 
@@ -32,6 +33,33 @@ export function useCreateClient() {
       if (!res.ok) throw new Error('Failed to create client')
       return res.json()
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['clients', 'options'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['clients', 'options'] })
+      toast.success('Client created')
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to create client'),
+  })
+}
+
+export function useUpdateClient(clientId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (
+      payload: Partial<{ name: string; url: string; departments: string[]; assigned_ses: string[] }>
+    ) => {
+      const res = await fetch(`/api/clients/${clientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw new Error('Failed to update client')
+      return res.json()
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['client', clientId, 'overview'] })
+      qc.invalidateQueries({ queryKey: ['clients', 'options'] })
+      toast.success('Client updated')
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to update client'),
   })
 }

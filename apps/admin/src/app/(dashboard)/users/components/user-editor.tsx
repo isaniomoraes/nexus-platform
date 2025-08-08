@@ -1,8 +1,16 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { Button, Input, Label } from '@nexus/ui/components'
-import { useClients } from '@/src/hooks/use-clients'
+import { useEffect, useState } from 'react'
+import {
+  Button,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@nexus/ui/components'
 
 export type UserEditorValue = {
   id?: string
@@ -28,8 +36,6 @@ export function UserEditor({
     initial ?? { role: 'admin', name: '', email: '' }
   )
   const isSE = value.role === 'se'
-  const { data: clients } = useClients()
-  const clientOptions = useMemo(() => clients?.data ?? [], [clients])
 
   useEffect(() => {
     setValue(initial ?? { role: 'admin', name: '', email: '' })
@@ -75,15 +81,18 @@ export function UserEditor({
         </div>
         <div className="space-y-2">
           <Label htmlFor="role">Role</Label>
-          <select
-            id="role"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          <Select
             value={value.role}
-            onChange={(e) => setValue((v) => ({ ...v, role: e.target.value as 'admin' | 'se' }))}
+            onValueChange={(v) => setValue((prev) => ({ ...prev, role: v as 'admin' | 'se' }))}
           >
-            <option value="admin">Admin</option>
-            <option value="se">SE</option>
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="se">SE</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       {isSE && (
@@ -118,32 +127,6 @@ export function UserEditor({
                   }))
                 }
               />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Assigned clients</Label>
-            <div className="grid grid-cols-1 gap-2 rounded-md border p-3">
-              {clientOptions.map((c) => {
-                const checked = value.assigned_clients?.includes(c.id) ?? false
-                return (
-                  <label key={c.id} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      className="size-3"
-                      checked={checked}
-                      onChange={(e) =>
-                        setValue((v) => ({
-                          ...v,
-                          assigned_clients: e.target.checked
-                            ? [...(v.assigned_clients ?? []), c.id]
-                            : (v.assigned_clients ?? []).filter((id) => id !== c.id),
-                        }))
-                      }
-                    />
-                    <span>{c.name}</span>
-                  </label>
-                )
-              })}
             </div>
           </div>
         </>

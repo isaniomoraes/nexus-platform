@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import type { ExceptionRow } from '@nexus/shared'
 
 export function useExceptions(filters: { clientId?: string; type?: string; severity?: string }) {
@@ -33,7 +34,9 @@ export function useUpdateExceptionStatus() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['exceptions'] })
+      toast.success('Exception status updated')
     },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to update status'),
   })
 }
 

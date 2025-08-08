@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
 export type UserRow = {
   id: string
@@ -42,7 +43,11 @@ export function useUpsertUser() {
       if (!res.ok) throw new Error('Failed to save user')
       return res.json()
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] })
+      toast.success('User saved')
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to save user'),
   })
 }
 
@@ -54,6 +59,10 @@ export function useDeleteUser() {
       if (!res.ok) throw new Error('Failed to delete user')
       return res.json()
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] })
+      toast.success('User deleted')
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to delete user'),
   })
 }

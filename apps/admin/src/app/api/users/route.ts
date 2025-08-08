@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { userUpsertSchema } from '@nexus/shared'
+import { userUpsertSchema, type UserUpsertPayload } from '@nexus/shared'
 import { getSupabaseAndUser, requireAdminOrSE, elevateForAdminOps } from '@/src/lib/auth'
 
 export async function GET(request: Request) {
@@ -7,17 +7,19 @@ export async function GET(request: Request) {
   if (!requireAdminOrSE(dbUser)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const supabase = elevateForAdminOps(baseClient, dbUser)
   const roleFilter = new URL(request.url).searchParams.get('role')
-  let query = supabase
-    .from('users')
-    .select('id,name,email,phone,role,hourly_cost_rate,hourly_bill_rate,assigned_clients')
-    .in('role', ['admin', 'se'])
   if (roleFilter === 'se') {
-    query = supabase
+    const { data, error } = await supabase
       .from('users')
-      .select('id,name,email')
+      .select('id,name,email,phone,role,hourly_cost_rate,hourly_bill_rate')
       .eq('role', 'se')
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ data })
   }
-  const { data, error } = await query
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id,name,email,phone,role,hourly_cost_rate,hourly_bill_rate')
+    .in('role', ['admin', 'se'])
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ data })
 }
@@ -30,13 +32,25 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   const payload = parsed.data
   const supabase = elevateForAdminOps(baseClient, dbUser)
+  // Update or create user. Assigned clients are NOT managed here; clients.assigned_ses is the source of truth.
+  const userWrite: Partial<UserUpsertPayload> = { ...(payload as UserUpsertPayload) }
+  // Remove UI-only field if present
+  delete (userWrite as { assigned_clients?: string[] }).assigned_clients
+
+
   if (payload.id) {
-    const { error } = await supabase.from('users').update(payload).eq('id', payload.id)
+    const { error } = await supabase.from('users').update(userWrite).eq('id', payload.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ ok: true })
+  } else {
+    const { error } = await supabase
+      .from('users')
+      .insert(userWrite)
+      .select('id')
+      .single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    // created successfully
   }
-  const { error } = await supabase.from('users').insert(payload)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
   return NextResponse.json({ ok: true })
 }
 

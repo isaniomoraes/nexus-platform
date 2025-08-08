@@ -1,6 +1,7 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
 export interface ClientOverview {
   client: {
@@ -78,6 +79,46 @@ export function useClientWorkflows(clientId: string) {
       return (await res.json()) as { data: ClientWorkflowRow[] }
     },
     enabled: !!clientId,
+  })
+}
+
+export function useCompletePipelinePhase(clientId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (phaseId: string) => {
+      const res = await fetch(`/api/clients/${clientId}/pipeline`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phaseId }),
+      })
+      if (!res.ok) throw new Error('Failed to complete phase')
+      return res.json()
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['client', clientId, 'overview'] })
+      toast.success('Pipeline phase completed')
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to complete phase'),
+  })
+}
+
+export function useUpdateClientDocuments(clientId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: Record<string, unknown>) => {
+      const res = await fetch(`/api/clients/${clientId}/documents`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw new Error('Failed to save documents')
+      return res.json()
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['client', clientId, 'overview'] })
+      toast.success('Document links saved')
+    },
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : 'Failed to save documents'),
   })
 }
 

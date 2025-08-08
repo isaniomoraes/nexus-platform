@@ -19,6 +19,7 @@ export * from './ui/empty-cta'
 export * from './ui/checkbox'
 export * from './ui/switch'
 export * from './ui/badge'
+export * from './ui/sonner'
 
 // Hooks
 export * from '../hooks/use-mobile'
