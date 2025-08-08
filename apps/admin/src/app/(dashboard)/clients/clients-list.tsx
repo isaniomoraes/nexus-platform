@@ -40,7 +40,7 @@ export default function ClientsList({
       )}
 
       {isLoading ? (
-        <Table containerClassName={containerClassName}>
+        <Table containerClassName={containerClassName} className={tableClassName}>
           <TableHeader>
             <TableRow>
               <TableHead>Client Name</TableHead>
@@ -74,11 +74,12 @@ export default function ClientsList({
                     <Skeleton className="h-4 w-10" />
                   </div>
                 </TableCell>
-              </TableRow>) )}
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       ) : clients?.data.length ? (
-        <Table className={tableClassName}>
+        <Table containerClassName={containerClassName} className={tableClassName}>
           <TableHeader>
             <TableRow>
               <TableHead>Client Name</TableHead>

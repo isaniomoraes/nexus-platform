@@ -8,7 +8,9 @@ export async function GET() {
   const supabase = elevateForAdminOps(baseClient, dbUser)
   const { data, error } = await supabase
     .from('clients')
-    .select('id,name,url,contract_start_date,departments,assigned_ses,workflows(execution_count),exceptions(count)')
+    .select(
+      'id,name,url,contract_start_date,departments,assigned_ses,workflows(execution_count),exceptions(count)'
+    )
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -16,7 +18,7 @@ export async function GET() {
     id: c.id,
     name: c.name,
     url: c.url,
-    contract_start_date: (c as any).contract_start_date ?? null,
+    contract_start_date: c.contract_start_date ?? null,
     departments: c.departments ?? [],
     assigned_ses: c.assigned_ses ?? [],
     workflowsCount: Array.isArray(c.workflows) ? c.workflows.length : 0,
