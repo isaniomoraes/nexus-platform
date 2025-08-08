@@ -12,6 +12,7 @@ import {
   Repeat,
   TriangleAlert,
   Users,
+  EllipsisVerticalIcon,
 } from 'lucide-react'
 
 import {
@@ -163,6 +164,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       {me.data?.data.email ?? ''}
                     </span>
                   </div>
+                  <EllipsisVerticalIcon className="size-3" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent

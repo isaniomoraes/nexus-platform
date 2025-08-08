@@ -1,6 +1,5 @@
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@nexus/ui/components'
+import { SidebarInset, SidebarProvider, SidebarTrigger, Separator } from '@nexus/ui/components'
 import { AppSidebar } from '../../components/app-sidebar'
-import { Separator } from '@nexus/ui/components'
 import { PageTitle } from '../../components/page-title'
 import { UserMenu } from '../../components/user-menu'
 import { getSupabaseServer } from '../../lib/supabase-server'

@@ -1,0 +1,602 @@
+---
+description: Complete PRD implementation guide for Nexus platform features and business logic
+globs: ["**/*.{ts,tsx}", "apps/**/*", "packages/**/*"]
+dependencies: ["000-core.mdc", "005-monorepo.mdc"]
+alwaysApply: true
+priority: 98
+---
+
+# Nexus Platform PRD Implementation Guide
+
+## Business Context & Definitions
+
+### **Core Platform Components**
+- **Nexus Factory**: Core platform that converts client surveys + workflow docs into Automated Workflows and Custom Agents
+- **Nexus Automated Workflows**: Generated code sets that automate distinct client workflows (invoicing, customer service, recruiting, etc.)
+- **Nexus Nodes**: Sub-components of workflows (email monitoring, Salesforce API, Kronos API, Ariba API, etc.)
+- **Nexus Custom Agents**: Braintrust AIR clones that interact via chat, txt, phone, email, slack, video
+- **ADA Agent**: Internal agent for translating surveys into Client Automation Proposals
+- **HITL**: Human In The Loop - client employees who handle workflow exceptions
+
+### **User Roles & Access**
+```typescript
+export const USER_ROLES = {
+  ADMIN: 'admin',        // Braintrust employees (Adam/Nick)
+  SE: 'se',             // Solutions Engineers (employee/contractor)
+  CLIENT: 'client'      // Client company users
+} as const
+
+// Access Control Rules
+// Admin App: Only ADMIN and SE users
+// - Admins: See all clients, manage all users
+// - SEs: See assigned clients only, manage client users only
+// Client App: Only CLIENT users and assigned SEs
+```
+
+## Admin App Implementation Requirements
+
+### **Dashboard Overview (`apps/admin/app/dashboard/`)**
+
+#### **Time Period Filters**
+```typescript
+export const TIME_PERIODS = {
+  LAST_7_DAYS: 'last-7-days',
+  LAST_30_DAYS: 'last-30-days',
+  MTD: 'mtd',
+  QTD: 'qtd',
+  YTD: 'ytd',
+  ITD: 'itd'  // Default - inception to date
+} as const
+
+// Filter component above data cards
+<TimeFilterTabs defaultValue="itd" />
+```
+
+#### **Global Data Cards with Change Indicators**
+```typescript
+// Each card shows value + percentage change (green/red indicators)
+interface MetricCard {
+  title: string
+  value: number
+  change: number // percentage change since selected period
+  trend: 'up' | 'down'
+  format: 'number' | 'currency' | 'time'
+}
+
+const DASHBOARD_METRICS = [
+  'Total workflows',
+  'Total exceptions',
+  'Time saved',
+  'Revenue',
+  'Active Clients'
+]
+```
+
+#### **Clients Table**
+```typescript
+// Sortable table with Add Client button on far right
+interface ClientTableRow {
+  name: string           // Link to client detail page
+  contractStartDate: Date // Link to contract
+  totalWorkflows: number  // Link to workflows
+  totalNodes: number
+  executions: number      // Link to execution log
+  exceptions: number      // Link to exceptions log
+  totalRevenue: number
+  timeSaved: number
+  moneySaved: number
+}
+```
+
+### **Add New Client Form (`apps/admin/app/clients/new/`)**
+```typescript
+const AddClientSchema = z.object({
+  companyName: z.string().min(1),
+  companyUrl: z.string().url().optional(),
+  departments: z.array(z.string()),
+  users: z.array(z.object({
+    name: z.string().min(1),
+    email: z.string().email(),
+    phone: z.string().optional(),
+    department: z.string(),
+    // Exception alert preferences
+    emailAlerts: z.boolean().default(true),
+    smsAlerts: z.boolean().default(false),
+    // Access permissions
+    hasBillingAccess: z.boolean().default(false),
+    canManageUsers: z.boolean().default(false)
+  })),
+  assignedSEs: z.array(z.string().uuid()) // Multiple SEs allowed
+})
+```
+
+### **User Management (`apps/admin/app/users/`)**
+```typescript
+// Two user types: Admin and SE
+const AdminUserSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  phone: z.string().optional(),
+  role: z.literal('admin')
+})
+
+const SEUserSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  phone: z.string().optional(),
+  role: z.literal('se'),
+  hourlyRateCost: z.number().positive(),
+  hourlyRateBillable: z.number().positive(),
+  assignedClients: z.array(z.string().uuid())
+})
+```
+
+### **Client Detail Page (`apps/admin/app/clients/[id]/`)**
+
+#### **Client Overview Layout**
+```typescript
+// Top section: Assigned SEs cards with photos
+<AssignedSECards
+  sEs={client.assignedSEs}
+  onChangeAssignment={handleSEAssignment}
+/>
+
+// Right section: Client users table
+<ClientUsersTable
+  columns={['name', 'email', 'phone', 'billing', 'admin', 'notes']}
+  data={client.users}
+/>
+
+// Bottom section: Document Links (editable fields)
+const DocumentLinksSchema = z.object({
+  surveyQuestions: z.string().url().optional(),
+  surveyResults: z.string().url().optional(),
+  processDocumentation: z.string().url().optional(),
+  adaProposal: z.string().url().optional(),
+  contract: z.string().url().optional(),
+  factoryMarkdown: z.string().url().optional(),
+  testPlan: z.string().url().optional()
+})
+```
+
+#### **Pipeline Progress Component**
+```typescript
+export const PIPELINE_PHASES = [
+  'Discovery: Initial Survey',
+  'Discovery: Process deep dive',
+  'ADA Proposal Sent',
+  'ADA Proposal Review done',
+  'ADA Contract Sent',
+  'ADA Contract Signed',
+  'Credentials collected',
+  'Factory build initiated',
+  'Test plan generated',
+  'Testing started',
+  'Production deploy'
+] as const
+
+// Vertical timeline with completion status
+// Only show ONE "Complete" button for next incomplete phase
+// Phases must be completed sequentially
+interface PipelinePhase {
+  name: string
+  completedAt?: Date
+  isActive: boolean // Only one phase can be active
+  canComplete: boolean // Only if previous phases complete
+}
+```
+
+#### **Client Workflows Tab**
+```typescript
+interface ClientWorkflow {
+  createdAt: Date
+  department: string
+  name: string
+  reportingLink: string
+  roiLink: string
+  description: string
+  documentationLink: string
+  isActive: boolean // Toggle with confirmation popup
+  nodeCount: number
+  executionCount: number
+  logsLink: string
+  exceptionCount: number
+  exceptionLogsLink: string
+  timeSavedPerExecution: number // Input field
+  moneySavedPerExecution: number // Input field (hourly rate)
+}
+```
+
+### **Billing System (`apps/admin/app/billing/`)**
+
+#### **Client Billing Center**
+```typescript
+interface ClientBilling {
+  planManager: {
+    subscriptionPlan: string
+    canEdit: boolean
+  }
+  invoiceManager: {
+    invoices: Invoice[]
+    autoInvoicing: boolean // Based on subscription plan
+  }
+  contractDetails: {
+    startDate: Date
+    endDate: Date
+    itdBilled: number // Inception to date billed
+  }
+  adminCredits?: number // Admin only feature
+}
+
+interface Invoice {
+  invoiceDate: Date
+  terms: string // Due by date
+  paymentMethod: 'stripe' | 'erp'
+  status: 'paid' | 'pending' | 'overdue'
+  amount: number
+}
+```
+
+#### **Subscription Plans Manager**
+```typescript
+const SubscriptionPlanSchema = z.object({
+  name: z.string().min(1), // Can be custom for one client
+  pricingModel: z.enum(['consumption', 'fixed', 'hybrid']),
+  // Consumption model details
+  consumptionMetrics: z.array(z.enum([
+    'completed_interview',
+    'placed_candidate',
+    'timecard_processed',
+    'client_billed',
+    'talent_paid'
+  ])).optional(),
+  creditsPerPeriod: z.number().int().positive().optional(),
+  pricePerCredit: z.number().positive().optional(),
+  // Contract terms
+  contractLength: z.enum(['month', 'quarter', 'year']),
+  billingCadence: z.enum(['monthly', 'quarterly']),
+  setupFee: z.number().min(0),
+  prepaymentPercentage: z.number().min(0).max(100),
+  capAmount: z.number().positive().optional(),
+  overageCost: z.number().positive().optional(),
+  // Product integration
+  productUsageAPI: z.enum(['air_direct', 'nexus_base']),
+  clientCount: z.number().int().min(0)
+})
+```
+
+### **Exception Management (`apps/admin/app/exceptions/`)**
+
+#### **Exception Filters & Table**
+```typescript
+const EXCEPTION_TYPES = {
+  AUTHENTICATION: 'authentication',
+  DATA_PROCESS: 'data_process',
+  INTEGRATION: 'integration',
+  WORKFLOW_LOGIC: 'workflow_logic',
+  BROWSER_AUTOMATION: 'browser_automation'
+} as const
+
+const EXCEPTION_SEVERITY = {
+  CRITICAL: 'critical',
+  HIGH: 'high',
+  MEDIUM: 'medium',
+  LOW: 'low'
+} as const
+
+const EXCEPTION_STATUS = {
+  NEW: 'new',
+  IN_PROGRESS: 'in_progress',
+  RESOLVED: 'resolved',
+  IGNORED: 'ignored'
+} as const
+
+interface ExceptionLogEntry {
+  reportedAt: Date
+  clientName: string
+  department: string
+  workflowName: string
+  notifications: NotificationRecord[] // Who was notified, when, how
+  type: ExceptionType
+  severity: ExceptionSeverity
+  remedy?: string // Short text description
+  status: ExceptionStatus // Editable field
+}
+```
+
+## Client App Implementation Requirements
+
+### **Client Dashboard (`apps/client/app/dashboard/`)**
+
+#### **Layout Structure**
+```typescript
+// Far left: Current onboarding phase + full pipeline
+<PipelineProgress
+  currentPhase={client.currentPhase}
+  phases={PIPELINE_PHASES}
+  completedPhases={client.completedPhases}
+/>
+
+// Far right: ROI summary cards
+<ROISummaryCards>
+  <ROICard
+    title="Time Saved"
+    last7Days={timeSaved7d}
+    allTime={timeSavedTotal}
+    linkTo="/workflows"
+  />
+  <ROICard
+    title="Money Saved"
+    last7Days={moneySaved7d}
+    allTime={moneySavedTotal}
+    linkTo="/workflows"
+  />
+  <ROICard
+    title="Number of Workflows"
+    count={workflowCount}
+    linkTo="/workflows"
+  />
+</ROISummaryCards>
+
+// Far right: Assigned SE card
+<SECard
+  se={assignedSE}
+  onMessage={handleMessageSE}
+/>
+```
+
+### **Workflow ROI (`apps/client/app/workflows/`)**
+```typescript
+interface ClientWorkflowView {
+  createdAt: Date
+  department: string
+  name: string
+  reportingLink: string
+  roiLink: string
+  description: string
+  documentationLink: string
+  isActive: boolean // Toggle with "are you sure?" popup
+  nodeCount: number
+  executionCount: number
+  reportingLink2: string // Duplicate in spec
+  exceptionCount: number
+  exceptionLink: string
+  totalTimeSaved: number // In hours
+  totalMoneySaved: number
+}
+```
+
+### **Reporting (`apps/client/app/reporting/`)**
+```typescript
+// Workflow selector dropdown (default to first)
+<WorkflowSelector
+  workflows={clientWorkflows}
+  selectedId={selectedWorkflowId}
+  onChange={setSelectedWorkflowId}
+/>
+
+// Raw workflow execution logs
+interface WorkflowExecutionLog {
+  datetime: Date
+  workflowName: string
+  executionDetails: string
+}
+```
+
+### **Credentials Management (`apps/client/app/credentials/`)**
+```typescript
+// Left panel: Required 3rd party services (auto-derived from build plan)
+<RequiredServicesPanel
+  services={derivedServices} // From Nexus build plan nodes
+/>
+
+// Center panel: Credential input fields (populated when service selected)
+<CredentialInputForm
+  selectedService={selectedService}
+  onSave={handleSaveCredentials} // Encrypted storage
+/>
+
+interface ThirdPartyCredential {
+  serviceName: string
+  status: 'connected' | 'disconnected'
+  fields: CredentialField[]
+  encryptedData?: string // AWS Secrets Manager integration
+}
+```
+
+### **Client Billing (`apps/client/app/billing/`)**
+```typescript
+interface ClientBillingView {
+  subscriptionDetails: {
+    baseLicenseFee: number
+    consumptionFees: number
+    creditsRemaining: number
+    solutionsEngineeringHours: number
+    newFeatureBuildCosts: number
+  }
+  planManagement: {
+    currentTier: string
+    upgradeOptions: string[]
+    messageForUpgrade: boolean // V1: message SE instead
+  }
+  invoiceCenter: {
+    pastInvoices: Invoice[]
+    currentInvoice?: Invoice
+    paymentMethod: 'stripe' | 'other'
+    contractDownload: string
+  }
+  usageSummary: {
+    reportingLink: string
+    periodUsage: UsageMetric[]
+  }
+}
+```
+
+## Implementation Patterns & Best Practices
+
+### **Data Validation Schemas**
+```typescript
+// Always create Zod schemas for all forms and data structures
+// Use shared schemas in packages/shared/src/validations.ts
+// Infer TypeScript types from Zod schemas
+
+const ClientFormSchema = z.object({
+  // ... as defined above
+})
+
+export type ClientForm = z.infer<typeof ClientFormSchema>
+```
+
+### **Database Schema Design**
+```sql
+-- Key tables for RLS policies
+
+-- Users table with role-based access
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  phone TEXT,
+  role user_role NOT NULL, -- admin, se, client
+  client_id UUID REFERENCES clients(id),
+  assigned_clients UUID[] DEFAULT '{}', -- For SEs only
+  hourly_rate_cost DECIMAL(10,2), -- SE only
+  hourly_rate_billable DECIMAL(10,2), -- SE only
+  has_billing_access BOOLEAN DEFAULT FALSE,
+  can_manage_users BOOLEAN DEFAULT FALSE,
+  email_alerts BOOLEAN DEFAULT TRUE,
+  sms_alerts BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Pipeline phases tracking
+CREATE TABLE client_pipeline_phases (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id UUID REFERENCES clients(id),
+  phase_name TEXT NOT NULL,
+  completed_at TIMESTAMPTZ,
+  is_current BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Exception tracking with notifications
+CREATE TABLE workflow_exceptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id UUID REFERENCES clients(id),
+  workflow_id UUID REFERENCES workflows(id),
+  reported_at TIMESTAMPTZ DEFAULT NOW(),
+  type exception_type NOT NULL,
+  severity exception_severity NOT NULL,
+  status exception_status DEFAULT 'new',
+  remedy TEXT,
+  notifications JSONB DEFAULT '[]', -- Array of notification records
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### **Component Architecture**
+```typescript
+// Create reusable components for common patterns
+
+// Pipeline Progress - used in both apps
+<PipelineProgress
+  phases={PIPELINE_PHASES}
+  currentPhase={currentPhase}
+  completedPhases={completedPhases}
+  onCompletePhase={handleCompletePhase} // Admin only
+  readonly={isClientView}
+/>
+
+// Metric cards with change indicators
+<MetricCard
+  title="Total Workflows"
+  value={totalWorkflows}
+  change={workflowChange}
+  trend="up"
+  format="number"
+/>
+
+// Sortable data tables with actions
+<DataTable
+  columns={workflowColumns}
+  data={workflows}
+  sortable={true}
+  actions={workflowActions}
+/>
+```
+
+### **Access Control Implementation**
+```typescript
+// Middleware for route protection
+export function createRoleMiddleware(allowedRoles: UserRole[]) {
+  return async function middleware(request: NextRequest) {
+    const user = await getUserFromRequest(request)
+
+    if (!user || !allowedRoles.includes(user.role)) {
+      return NextResponse.redirect('/unauthorized')
+    }
+
+    // SE-specific client access validation
+    if (user.role === 'se') {
+      const clientId = extractClientIdFromUrl(request.url)
+      if (clientId && !user.assignedClients?.includes(clientId)) {
+        return NextResponse.redirect('/unauthorized')
+      }
+    }
+
+    return NextResponse.next()
+  }
+}
+```
+
+### **Form Handling Patterns**
+```typescript
+// Use React Hook Form + Zod for all forms
+export function useClientForm() {
+  const form = useForm<ClientForm>({
+    resolver: zodResolver(ClientFormSchema),
+    defaultValues: {
+      departments: [],
+      users: [],
+      assignedSEs: []
+    }
+  })
+
+  const createClient = useMutation({
+    mutationFn: (data: ClientForm) => trpc.clients.create.mutate(data),
+    onSuccess: () => {
+      toast.success('Client created successfully')
+      router.push('/clients')
+    }
+  })
+
+  return { form, createClient }
+}
+```
+
+## UI/UX Requirements
+
+### **Design Guidelines**
+- **Themable shadcn/ui system** - consistent design language
+- **Production-quality design** - no placeholder states
+- **Desktop-first** - no mobile responsiveness needed
+- **Creative expression** - go beyond basic shadcn templates
+- **Data visualization** - rich charts and metrics
+- **Interactive elements** - engaging user experience
+
+### **State Management**
+- **Loading states** - skeleton UI for all async operations
+- **Error states** - user-friendly error messages with retry options
+- **Empty states** - helpful guidance when no data exists
+- **Confirmation modals** - "Are you sure?" for destructive actions
+- **Toast notifications** - success/error feedback
+
+### **Navigation Patterns**
+- **Admin App**: Full navigation to all client management features
+- **Client App**: Limited navigation focused on own data and workflows
+- **Breadcrumbs**: Clear navigation hierarchy
+- **Deep linking**: All major views should be directly accessible via URL
+
+This PRD implementation guide ensures Cursor generates code that matches the exact business requirements, user flows, and technical specifications outlined in the functional specification.

@@ -23,6 +23,17 @@ export function useUsers() {
   })
 }
 
+export function useSEOptions() {
+  return useQuery<{ data: { id: string; name: string; email: string }[] }>({
+    queryKey: ['users', 'se-options'],
+    queryFn: async () => {
+      const res = await fetch('/api/users?role=se', { cache: 'no-store' })
+      if (!res.ok) throw new Error('Failed to load SEs')
+      return res.json()
+    },
+  })
+}
+
 export function useUpsertUser() {
   const qc = useQueryClient()
   return useMutation({

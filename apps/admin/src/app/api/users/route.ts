@@ -2,14 +2,22 @@ import { NextResponse } from 'next/server'
 import { userUpsertSchema } from '@nexus/shared'
 import { getSupabaseAndUser, requireAdminOrSE, elevateForAdminOps } from '@/src/lib/auth'
 
-export async function GET() {
+export async function GET(request: Request) {
   const { supabase: baseClient, dbUser } = await getSupabaseAndUser()
   if (!requireAdminOrSE(dbUser)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const supabase = elevateForAdminOps(baseClient, dbUser)
-  const { data, error } = await supabase
+  const roleFilter = new URL(request.url).searchParams.get('role')
+  let query = supabase
     .from('users')
     .select('id,name,email,phone,role,hourly_cost_rate,hourly_bill_rate,assigned_clients')
     .in('role', ['admin', 'se'])
+  if (roleFilter === 'se') {
+    query = supabase
+      .from('users')
+      .select('id,name,email')
+      .eq('role', 'se')
+  }
+  const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ data })
 }

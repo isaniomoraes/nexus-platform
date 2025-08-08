@@ -16,6 +16,7 @@ export * from './ui/alert-dialog'
 export * from './ui/select'
 export * from './ui/card'
 export * from './ui/empty-cta'
+export * from './ui/checkbox'
 
 // Hooks
 export * from '../hooks/use-mobile'
