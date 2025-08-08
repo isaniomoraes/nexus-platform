@@ -26,10 +26,10 @@ import {
 } from '@nexus/ui/components'
 import { EllipsisIcon, PencilIcon, Plus, TrashIcon, UserIcon } from 'lucide-react'
 import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table'
-import { userColumns } from './components/user-columns'
+import { userColumns } from './user-columns'
 import { useUsers, useDeleteUser, useUpsertUser } from '@/src/hooks/use-users'
 import { useMe } from '@/src/hooks/use-me'
-import { UserEditor, type UserEditorValue } from './components/user-editor'
+import { UserEditor, type UserEditorValue } from './user-editor'
 
 export function UsersClient() {
   const { data, isLoading } = useUsers()
