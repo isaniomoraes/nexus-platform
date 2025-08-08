@@ -10,6 +10,7 @@ export type UserRow = {
   role: 'admin' | 'se'
   hourly_cost_rate?: number | null
   hourly_bill_rate?: number | null
+  assigned_clients?: string[] | null
 }
 
 export const columnHelper = createColumnHelper<UserRow>()

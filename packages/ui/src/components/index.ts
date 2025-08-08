@@ -10,6 +10,8 @@ export * from './ui/tooltip'
 export * from './ui/logo'
 export * from './ui/avatar'
 export * from './ui/dropdown-menu'
+export * from './ui/table'
+export * from './ui/tabs'
 
 // Hooks
 export * from '../hooks/use-mobile'

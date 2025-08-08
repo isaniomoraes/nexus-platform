@@ -49,6 +49,10 @@ export default function ProfilePage() {
               className="cursor-not-allowed text-muted-foreground"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone</Label>
+            <Input id="phone" name="phone" placeholder="+1 234 567 8900" defaultValue={meData?.data.phone ?? ''} />
+          </div>
           <div className="flex justify-end">
             <Button type="button" disabled={updateMe.isPending || isLoading} onClick={() => {
               const form = (document.activeElement as HTMLElement)?.closest('form') as HTMLFormElement | null
