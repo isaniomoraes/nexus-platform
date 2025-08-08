@@ -114,7 +114,7 @@ export function createClient() {
 }
 
 // Server client with RLS (respects user permissions)
-export function createServerClient(cookieStore: any) {
+export function createServerClient(cookieStore) {
   return createServerClient(
     SUPABASE_CONFIG.url,
     SUPABASE_CONFIG.anonKey,

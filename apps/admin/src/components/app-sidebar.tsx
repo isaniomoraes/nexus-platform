@@ -9,7 +9,7 @@ import {
   CreditCard,
   MessageSquare,
   PieChart,
-  RefreshCw,
+  Repeat,
   TriangleAlert,
   Users,
 } from 'lucide-react'
@@ -63,7 +63,7 @@ const menuItems = [
   {
     title: 'Subscriptions',
     url: '/subscriptions',
-    icon: RefreshCw,
+    icon: Repeat,
   },
   {
     title: 'Messaging',

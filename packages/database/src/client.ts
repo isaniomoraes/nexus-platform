@@ -1,4 +1,5 @@
 import { createBrowserClient, createServerClient } from '@supabase/ssr'
+import { createClient as createServiceAdminClient } from '@supabase/supabase-js'
 import { SUPABASE_CONFIG } from './config'
 
 // Standard client (both apps) - respects RLS
@@ -30,4 +31,9 @@ export function createServerClientWithCookies(cookieStore: {
 // Service role client (admin app only) - can bypass RLS when needed
 export function createServiceClient() {
   return createBrowserClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.serviceRoleKey)
+}
+
+// Server-side service role client (bypasses RLS). Use ONLY in secure server contexts.
+export function createServiceServerClient() {
+  return createServiceAdminClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.serviceRoleKey)
 }

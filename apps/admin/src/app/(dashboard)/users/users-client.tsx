@@ -14,6 +14,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  EmptyCta,
   Sheet,
   SheetContent,
   SheetHeader,
@@ -74,8 +75,16 @@ export function UsersClient() {
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + 1} className="px-3 py-6 text-muted-foreground">
-                  No users found
+                <TableCell colSpan={columns.length + 1} className="px-3 py-6">
+                  <EmptyCta
+                    size="small"
+                    title="No users yet"
+                    description="Add your first user to manage access."
+                    icon={UserIcon}
+                    footerActionProps={[
+                      { type: 'button', onClick: () => setOpen(true), children: 'Add User' },
+                    ]}
+                  />
                 </TableCell>
               </TableRow>
             ) : (

@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss'
+import defaultTheme from 'tailwindcss/defaultTheme'
 
 const config = {
   darkMode: ['class'],
@@ -19,6 +20,11 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        // Inter from rsms.me sets body font-family: 'Inter var', system-ui, ...
+        // We keep Tailwind mapping to 'Inter var' via class font-sans.
+        sans: ['"Inter var"', ...defaultTheme.fontFamily.sans],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

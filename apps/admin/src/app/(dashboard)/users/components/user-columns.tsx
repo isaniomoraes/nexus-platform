@@ -19,7 +19,7 @@ export const userColumns = [
   columnHelper.accessor('name', { header: 'Name' }),
   columnHelper.accessor('email', { header: 'Email' }),
   columnHelper.accessor('phone', { header: 'Phone' }),
-  columnHelper.accessor('role', { header: 'Role', cell: (info) => info.getValue().toUpperCase() }),
+  columnHelper.accessor('role', { header: 'Role', cell: (info) => info.getValue() }),
   columnHelper.accessor('hourly_cost_rate', {
     header: 'Cost Rate',
     cell: (info) => (info.getValue() ? `$${info.getValue()}/hr` : '-'),

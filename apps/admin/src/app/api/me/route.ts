@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
+import { meUpdateSchema } from '@nexus/shared'
 import { getSupabaseAndUser } from '@/src/lib/auth'
 
 export async function GET() {
@@ -31,17 +31,11 @@ export async function GET() {
   })
 }
 
-const UpdateSchema = z.object({
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  phone: z.string().optional().nullable(),
-})
-
 export async function PATCH(request: Request) {
   const { supabase, authUser } = await getSupabaseAndUser()
   if (!authUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const json = await request.json().catch(() => null)
-  const parsed = UpdateSchema.safeParse(json)
+  const parsed = meUpdateSchema.safeParse(json)
   if (!parsed.success) return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   const { firstName, lastName, phone } = parsed.data
   const name = `${firstName} ${lastName}`.trim()

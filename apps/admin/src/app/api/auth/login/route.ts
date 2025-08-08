@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
+import { loginSchema } from '@nexus/shared'
 import { createServerClient } from '@supabase/ssr'
 import { SUPABASE_CONFIG } from '@nexus/database'
 
-const LoginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-})
-
 export async function POST(request: Request) {
   const json = await request.json().catch(() => null)
-  const parse = LoginSchema.safeParse(json)
+  const parse = loginSchema.safeParse(json)
   if (!parse.success) return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
 
   const response = NextResponse.json({ ok: true })

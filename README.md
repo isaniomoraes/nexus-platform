@@ -159,6 +159,35 @@ pnpm --filter @nexus/client build
 pnpm --filter @nexus/ui lint
 ```
 
+### Installing dependencies in the monorepo
+
+This repository uses pnpm workspaces. You can install packages in:
+
+- The whole workspace:
+  ```bash
+  pnpm install
+  ```
+
+- A specific app (admin or client):
+  ```bash
+  pnpm --filter @nexus/admin add <pkg>@<version>
+  pnpm --filter @nexus/client add <pkg>@<version>
+  ```
+
+- A shared package (e.g., UI or Shared):
+  ```bash
+  pnpm --filter @nexus/ui add <pkg>@<version>
+  pnpm --filter @nexus/shared add <pkg>@<version>
+  ```
+
+Notes:
+- Use the `--filter` flag to scope installation to a package.
+- When adding peer deps to shared packages, you usually don’t need to add them to apps unless they are runtime deps for the app.
+- For Radix-based shadcn components added to `@nexus/ui`, install the Radix package in that workspace, e.g.:
+  ```bash
+  pnpm --filter @nexus/ui add @radix-ui/react-alert-dialog
+  ```
+
 ### Adding New Features
 
 1. **Shared Components**: Add to `packages/ui/src/components/`
