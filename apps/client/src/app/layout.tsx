@@ -1,12 +1,8 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
-
-const inter = Inter({
-  subsets: ['latin'],
-  fallback: ['system-ui', 'arial'],
-  display: 'swap',
-})
+import { ThemeProvider } from 'next-themes'
+import { Toaster } from '@nexus/ui/components'
+import { ReactQueryProvider } from '../providers/react-query'
 
 export const metadata: Metadata = {
   title: {
@@ -19,7 +15,16 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <head>
+        <link rel="preconnect" href="https://rsms.me/" />
+        <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+      </head>
+      <body className="font-sans antialiased bg-sidebar">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ReactQueryProvider>{children}</ReactQueryProvider>
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
+      </body>
     </html>
   )
 }

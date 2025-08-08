@@ -50,6 +50,45 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  // TODO: optionally insert initial client users here in a follow-up
-  return NextResponse.json({ data })
+  const clientId = data.id as string
+  // Create initial client users via Supabase Auth (service role) and insert rows
+  const users = parsed.data.users ?? []
+  let createdUsers = 0
+  if (users.length > 0 && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const { createServiceServerClient } = await import('@nexus/database')
+    const admin = createServiceServerClient()
+    for (const u of users) {
+      // Create auth user with a random password; require admin to share credentials out-of-band
+      const tempPassword = crypto.randomUUID()
+      const { data: created, error: createErr } = await admin.auth.admin.createUser({
+        email: u.email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: { name: u.name, user_role: 'client', client_id: clientId },
+      })
+      if (createErr || !created.user) {
+        continue
+      }
+      const authId = created.user.id
+      const { error: insertErr } = await supabase.from('users').insert({
+        id: authId,
+        email: u.email,
+        name: u.name,
+        phone: u.phone ?? null,
+        role: 'client',
+        client_id: clientId,
+        is_billing_admin: u.hasBillingAccess ?? false,
+        can_manage_users: u.canManageUsers ?? false,
+      })
+      if (insertErr) {
+        // best-effort: continue
+        continue
+      }
+      await admin.auth.admin.updateUserById(authId, {
+        user_metadata: { user_role: 'client', client_id: clientId },
+      })
+      createdUsers += 1
+    }
+  }
+  return NextResponse.json({ data: { id: clientId, createdUsers } })
 }

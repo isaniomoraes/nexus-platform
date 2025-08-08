@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useClientOverview, useClientWorkflows } from '@/src/hooks/use-client'
 import { useDeleteWorkflow, useUpsertWorkflow } from '@/src/hooks/use-workflows'
@@ -33,7 +32,7 @@ import { MoreHorizontal, Pencil, Trash } from 'lucide-react'
 import { WorkflowEditorSheet } from './workflow-editor'
 import { format } from 'date-fns'
 
-export default function ClientWorkflowsPage() {
+export default function ClientWorkflows() {
   const params = useParams<{ id: string }>()
   const clientId = params?.id
   const { data: clientOverview } = useClientOverview(clientId)
@@ -48,24 +47,12 @@ export default function ClientWorkflowsPage() {
     () => (clientOverview?.client.departments ?? []).filter(Boolean),
     [clientOverview]
   )
-  // no-op: local sheet manages department state
 
-  if (!clientOverview?.client) return <div className="p-6">Client not found.</div>
+  if (!clientOverview?.client) return null
   const client = clientOverview.client
 
   return (
     <div className="space-y-6">
-      <div className="border-b">
-        <div className="flex gap-6 px-1">
-          <Link href={`/clients/${client.id}`} className="py-2 text-sm text-muted-foreground">
-            Overview
-          </Link>
-          <Link href={`/clients/${client.id}/workflows`} className="py-2 text-sm font-medium">
-            Client Workflows
-          </Link>
-        </div>
-      </div>
-
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <div className="text-sm font-medium">Workflows</div>

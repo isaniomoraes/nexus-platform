@@ -16,5 +16,6 @@ export const userUpsertSchema = z.object({
   hourly_cost_rate: z.number().optional().nullable(),
   hourly_bill_rate: z.number().optional().nullable(),
   assigned_clients: z.array(z.string().uuid()).optional(),
+  password: z.string().min(6).optional(),
 })
 export type UserUpsertPayload = z.infer<typeof userUpsertSchema>

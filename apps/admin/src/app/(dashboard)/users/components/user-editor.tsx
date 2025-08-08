@@ -21,6 +21,7 @@ export type UserEditorValue = {
   hourly_cost_rate?: number | null
   hourly_bill_rate?: number | null
   assigned_clients?: string[] | null
+  password?: string
 }
 
 export function UserEditor({
@@ -49,16 +50,17 @@ export function UserEditor({
         await onSave(value)
       }}
     >
+      <div className="space-y-2">
+        <Label htmlFor="name">Full name</Label>
+        <Input
+          id="name"
+          value={value.name}
+          onChange={(e) => setValue((v) => ({ ...v, name: e.target.value }))}
+          placeholder="Enter a name"
+          required
+        />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="name">Full name</Label>
-          <Input
-            id="name"
-            value={value.name}
-            onChange={(e) => setValue((v) => ({ ...v, name: e.target.value }))}
-            required
-          />
-        </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -66,7 +68,18 @@ export function UserEditor({
             type="email"
             value={value.email}
             onChange={(e) => setValue((v) => ({ ...v, email: e.target.value }))}
+            placeholder="Enter an email"
             required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            value={value.password ?? ''}
+            onChange={(e) => setValue((v) => ({ ...v, password: e.target.value }))}
+            placeholder={value.id ? '********' : 'Enter a password'}
           />
         </div>
       </div>
@@ -77,6 +90,7 @@ export function UserEditor({
             id="phone"
             value={value.phone ?? ''}
             onChange={(e) => setValue((v) => ({ ...v, phone: e.target.value }))}
+            placeholder="Enter a phone number"
           />
         </div>
         <div className="space-y-2">
@@ -111,6 +125,7 @@ export function UserEditor({
                     hourly_cost_rate: e.target.value === '' ? null : Number(e.target.value),
                   }))
                 }
+                placeholder="Enter a cost rate"
               />
             </div>
             <div className="space-y-2">
@@ -126,6 +141,7 @@ export function UserEditor({
                     hourly_bill_rate: e.target.value === '' ? null : Number(e.target.value),
                   }))
                 }
+                placeholder="Enter a billable rate"
               />
             </div>
           </div>
