@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@nexus/ui/components'
+import { CircleCheckBigIcon } from 'lucide-react'
 
 export default function ClientOverviewPage() {
   const params = useParams<{ id: string }>()
@@ -162,9 +163,15 @@ export default function ClientOverviewPage() {
                   const isNext = !completed && previousCompleted
                   return (
                     <div key={p.id} className="flex items-center justify-start gap-3">
-                      <div
-                        className={`size-2 rounded-full ${completed ? 'bg-green-500' : 'bg-muted-foreground'}`}
-                      />
+                      <span className="size-5 flex items-center justify-center">
+                        {completed ? (
+                          <CircleCheckBigIcon className="size-6 text-green-500" />
+                        ) : (
+                          <div
+                            className={`size-4 rounded-full ${completed ? 'bg-green-500' : 'bg-muted-foreground/30'}`}
+                          />
+                        )}
+                      </span>
                       <div>
                         <div className="text-sm font-medium">{p.phase_name}</div>
                         {completed && (
