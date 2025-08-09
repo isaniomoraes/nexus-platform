@@ -110,7 +110,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarGroup>
           <SidebarGroupContent>
             {me.data?.data.role === 'se' ? (
-              <div className="px-2 pb-2">
+              <div className="px-0 pb-2">
                 <ClientSwitcher />
               </div>
             ) : null}
