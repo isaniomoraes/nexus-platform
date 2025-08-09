@@ -81,6 +81,102 @@
     --sidebar-width-icon: 3rem;
     --sidebar-width-mobile: 18rem;
   }
+
+  /* Color theme variants (shadcn pattern: override CSS vars via attribute) */
+  :root[data-color-theme='blue'] {
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 221 83% 53%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-accent: 221 83% 53%;
+  }
+  .dark[data-color-theme='blue'] {
+    --primary: 221 83% 66%;
+    --primary-foreground: 240 5.9% 10%;
+    --ring: 221 83% 66%;
+    --sidebar-primary: 221 83% 66%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 221 83% 53%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+
+  :root[data-color-theme='orange'] {
+    --primary: 24 95% 55%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 24 95% 55%;
+    --sidebar-primary: 24 95% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 24 95% 55%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+  .dark[data-color-theme='orange'] {
+    --primary: 24 95% 60%;
+    --primary-foreground: 240 5.9% 10%;
+    --ring: 24 95% 60%;
+    --sidebar-primary: 24 95% 60%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 24 95% 55%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+
+  :root[data-color-theme='green'] {
+    --primary: 142 70% 45%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 142 70% 45%;
+    --sidebar-primary: 142 70% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 142 70% 45%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+  .dark[data-color-theme='green'] {
+    --primary: 142 70% 60%;
+    --primary-foreground: 240 5.9% 10%;
+    --ring: 142 70% 60%;
+    --sidebar-primary: 142 70% 60%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 142 70% 45%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+
+  :root[data-color-theme='yellow'] {
+    --primary: 43 96% 56%;
+    --primary-foreground: 24 10% 10%;
+    --ring: 43 96% 56%;
+    --sidebar-primary: 43 96% 56%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 43 96% 56%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+  .dark[data-color-theme='yellow'] {
+    --primary: 43 96% 60%;
+    --primary-foreground: 240 5.9% 10%;
+    --ring: 43 96% 60%;
+    --sidebar-primary: 43 96% 60%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 43 96% 56%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+
+  :root[data-color-theme='violet'] {
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 98%;
+    --ring: 262 83% 58%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 262 83% 58%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
+  .dark[data-color-theme='violet'] {
+    --primary: 262 83% 70%;
+    --primary-foreground: 240 5.9% 10%;
+    --ring: 262 83% 70%;
+    --sidebar-primary: 262 83% 70%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 262 83% 58%;
+    --sidebar-accent-foreground: 0 0% 100%;
+  }
 }
 
 @layer base {

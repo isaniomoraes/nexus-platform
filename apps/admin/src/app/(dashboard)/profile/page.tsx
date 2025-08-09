@@ -1,7 +1,19 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-import { Separator, Label, Button, Input } from '@nexus/ui/components'
+import {
+  Separator,
+  Label,
+  Button,
+  Input,
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+  ColorSwatch,
+} from '@nexus/ui/components'
+import * as React from 'react'
 import { useMe, useUpdateMe } from '@/src/hooks/use-me'
 import { Sun, Moon, Monitor } from 'lucide-react'
 
@@ -10,6 +22,9 @@ export default function ProfilePage() {
   const current = theme === 'system' ? systemTheme : theme
   const { data: meData, isLoading } = useMe()
   const updateMe = useUpdateMe()
+  const [colorTheme, setColorTheme] = React.useState<string>(() =>
+    typeof window === 'undefined' ? 'default' : (localStorage.getItem('color-theme') ?? 'default')
+  )
 
   return (
     <div className="space-y-6">
@@ -120,6 +135,34 @@ export default function ProfilePage() {
             previewClass="bg-gray-900 text-slate-100"
           />
         </div>
+
+        <div className="mt-6 space-y-2">
+          <Label>Color Theme</Label>
+          <Select
+            value={colorTheme}
+            onValueChange={(v) => {
+              setColorTheme(v)
+              document.documentElement.setAttribute('data-color-theme', v)
+              try {
+                localStorage.setItem('color-theme', v)
+              } catch {}
+            }}
+          >
+            <SelectTrigger className="w-72">
+              <SelectValue placeholder="Select color theme" />
+            </SelectTrigger>
+            <SelectContent className="w-72">
+              {colorThemeOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value} className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <ColorSwatch from={opt.color} />
+                    <span>{opt.label}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </section>
     </div>
   )
@@ -175,3 +218,12 @@ function ThemeCard({
     </button>
   )
 }
+
+const colorThemeOptions = [
+  { value: 'default', label: 'Default (Nexus)', color: 'oklch(0 0 0)' },
+  { value: 'blue', label: 'Blue', color: 'oklch(0.623 0.214 259.815)' },
+  { value: 'orange', label: 'Orange', color: 'oklch(0.705 0.213 47.604)' },
+  { value: 'green', label: 'Green', color: 'oklch(0.723 0.219 149.579)' },
+  { value: 'yellow', label: 'Yellow', color: 'oklch(0.795 0.184 86.047)' },
+  { value: 'violet', label: 'Violet', color: 'oklch(0.606 0.25 292.717)' },
+] as const

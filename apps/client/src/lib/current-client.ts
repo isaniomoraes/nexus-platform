@@ -31,7 +31,8 @@ export async function getCurrentClientId(
     const jwtClientId = meta.client_id ?? null
     const cookieStore = await nextCookies().catch(() => undefined)
     const cookieClientId = cookieStore?.get('current_client_id')?.value ?? null
-    const selected = jwtClientId || cookieClientId
+    // Prefer cookie selection to avoid requiring immediate JWT refresh
+    const selected = cookieClientId || jwtClientId
     debug.client_path = 'role=se:jwt_client_id||cookie_current_client_id'
     debug.jwt_client_id = jwtClientId
     debug.cookie_client_id = cookieClientId

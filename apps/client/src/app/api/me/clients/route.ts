@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSupabaseRouteClient } from '../../../../lib/supabase-route'
 
 export async function GET() {
-  const { supabase, response } = await getSupabaseRouteClient()
+  const { supabase, response, getCookie } = await getSupabaseRouteClient()
 
   const { data } = await supabase.auth.getUser()
   const userId = data.user?.id
@@ -33,7 +33,13 @@ export async function GET() {
         .select('id,name')
         .contains('assigned_ses', [me.id])
       clients = rows ?? []
-      current = me.client_id ?? clients[0]?.id
+      const cookieSelected = getCookie('current_client_id')
+      // Prefer cookie selection when valid to reflect latest user choice without waiting for JWT refresh
+      if (cookieSelected && (clients ?? []).some((c) => c.id === cookieSelected)) {
+        current = cookieSelected
+      } else {
+        current = me.client_id ?? clients[0]?.id
+      }
     }
   }
   return NextResponse.json({ clients, current_client_id: current }, { headers: response.headers })

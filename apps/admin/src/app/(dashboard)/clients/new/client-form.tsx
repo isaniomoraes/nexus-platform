@@ -278,7 +278,7 @@ export default function NewClientForm() {
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancel
         </Button>
-        <Button type="submit" disabled={createClient.isPending}>
+        <Button type="submit" isLoading={createClient.isPending} loadingText="Creating...">
           Create Client
         </Button>
       </div>

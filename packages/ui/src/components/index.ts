@@ -22,6 +22,7 @@ export * from './ui/badge'
 export * from './ui/sonner'
 export * from './ui/scroll-area'
 export * from './ui/toggle-group'
+export * from './ui/color-swatch'
 
 // Hooks
 export * from '../hooks/use-mobile'

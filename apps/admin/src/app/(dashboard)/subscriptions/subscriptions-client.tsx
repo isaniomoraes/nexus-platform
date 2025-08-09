@@ -245,7 +245,7 @@ export default function SubscriptionsClient() {
         <h2 className="text-2xl font-bold">Plan Manager</h2>
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
-            <Button onClick={openCreate} className="gap-2">
+            <Button onClick={openCreate} className="gap-2" isLoading={upsertPlan.isPending}>
               <CirclePlusIcon className="size-4" /> Add Plan
             </Button>
           </SheetTrigger>
@@ -435,7 +435,13 @@ export default function SubscriptionsClient() {
                   <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit">{editing ? 'Save Changes' : 'Create Plan'}</Button>
+                  <Button
+                    type="submit"
+                    isLoading={upsertPlan.isPending}
+                    loadingText={editing ? 'Saving...' : 'Creating...'}
+                  >
+                    {editing ? 'Save Changes' : 'Create Plan'}
+                  </Button>
                 </div>
               </SheetFooter>
             </form>

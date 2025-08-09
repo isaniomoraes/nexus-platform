@@ -156,7 +156,12 @@ export default function ClientOverview() {
                         )}
                       </div>
                       {isNext ? (
-                        <Button size="sm" onClick={() => completePhase.mutate(p.id)}>
+                        <Button
+                          size="sm"
+                          isLoading={completePhase.isPending}
+                          loadingText="Completing..."
+                          onClick={() => completePhase.mutate(p.id)}
+                        >
                           Complete
                         </Button>
                       ) : null}
