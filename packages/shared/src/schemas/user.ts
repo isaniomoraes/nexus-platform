@@ -9,7 +9,7 @@ export type MeUpdatePayload = z.infer<typeof meUpdateSchema>
 
 export const userUpsertSchema = z.object({
   id: z.string().uuid().optional(),
-  role: z.enum(['admin', 'se']),
+  role: z.enum(['admin', 'se', 'client']),
   name: z.string().min(1),
   email: z.string().email(),
   phone: z.string().optional().nullable(),

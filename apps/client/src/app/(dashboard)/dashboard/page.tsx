@@ -5,6 +5,7 @@ import { SECard } from './se-card'
 import DashboardSkeleton from './dashboard-skeleton'
 import { useMemo } from 'react'
 import { useClientSEs, useMetrics, usePipeline } from '@/src/hooks/use-dashboard'
+import { PhaseStatus } from './phase-status'
 import { LayersIcon } from 'lucide-react'
 
 export default function ClientDashboard() {
@@ -39,14 +40,10 @@ export default function ClientDashboard() {
             <ol className="space-y-3">
               {phases.map((p, i) => (
                 <li key={p.id} className="flex items-start gap-3">
-                  <span
-                    className={
-                      i < activeIndex
-                        ? 'bg-green-500 mt-1 size-2 rounded-full'
-                        : i === activeIndex
-                          ? 'bg-blue-500 mt-1 size-2 rounded-full'
-                          : 'bg-muted-foreground/30 mt-1 size-2 rounded-full'
-                    }
+                  <PhaseStatus
+                    completed={i < activeIndex}
+                    active={i === activeIndex}
+                    className="mt-1"
                   />
                   <div>
                     <div className="font-medium">{p.name}</div>

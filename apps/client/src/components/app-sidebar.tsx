@@ -53,14 +53,19 @@ const menuItems = [
     icon: WorkflowIcon,
   },
   {
-    title: 'Exceptions',
-    url: '/exceptions',
-    icon: TriangleAlert,
+    title: 'Reporting',
+    url: '/reporting',
+    icon: PieChart,
   },
   {
     title: 'Credentials',
     url: '/credentials',
     icon: KeySquareIcon,
+  },
+  {
+    title: 'Exceptions',
+    url: '/exceptions',
+    icon: TriangleAlert,
   },
   {
     title: 'Users',
@@ -71,18 +76,11 @@ const menuItems = [
     title: 'Billing',
     url: '/billing',
     icon: CreditCard,
-    disabled: false,
   },
   {
     title: 'Messaging',
     url: '/messaging',
     icon: MessageSquare,
-    disabled: true,
-  },
-  {
-    title: 'Reporting',
-    url: '/reporting',
-    icon: PieChart,
     disabled: true,
   },
 ]
