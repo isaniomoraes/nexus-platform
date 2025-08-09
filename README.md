@@ -6,7 +6,7 @@ A comprehensive workflow automation platform built with Next.js 15, Supabase, an
 
 This project implements a monorepo with two main applications:
 
-- **Admin App** (`apps/admin`): Full platform management for Braintrust employees (Admin + SE roles)
+- **Admin App** (`apps/admin`): Full platform management for Company employees (Admin + SE roles)
 - **Client App** (`apps/client`): Customer portal for client users (restricted to own data)
 - **Shared Packages**: Common UI components, database layer, authentication, and business logic
 
@@ -242,7 +242,3 @@ Notes:
 3. Implement proper error boundaries
 4. Write meaningful tests
 5. Document complex business logic
-
-## License
-
-Private - Braintrust Internal Use Only
