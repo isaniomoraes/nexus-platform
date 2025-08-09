@@ -24,7 +24,7 @@ export default function ReportingPage() {
   const [workflowId, setWorkflowId] = useState<string | undefined>(undefined)
   const { data, isLoading } = useExecutionLogs(workflowId)
   const logs = data?.data ?? []
-  const workflows = data?.workflows ?? []
+  const workflows = useMemo(() => data?.workflows ?? [], [data?.workflows])
 
   const selected = useMemo(
     () => workflows.find((w) => w.id === workflowId) ?? null,

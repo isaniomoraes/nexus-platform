@@ -1,6 +1,7 @@
 'use client'
 
-import { Card, Button, EmptyCta } from '@nexus/ui/components'
+import { Card, EmptyCta } from '@nexus/ui/components'
+import { UserIcon } from 'lucide-react'
 
 type SE = { id: string; name: string; email: string }
 
@@ -10,7 +11,7 @@ export function SECard({ ses }: { ses: SE[] }) {
       <EmptyCta
         title="No SE assigned"
         description="A Solutions Engineer will be assigned to your account soon."
-        icon={() => null as unknown as never}
+        icon={UserIcon}
         size="small"
       />
     )

@@ -40,6 +40,7 @@ export default function ClientWorkflows() {
   const [open, setOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<string | null>(null)
+  const [pendingToggle, setPendingToggle] = useState<{ id: string; next: boolean } | null>(null)
   const upsert = useUpsertWorkflow(clientId!)
   const del = useDeleteWorkflow(clientId!)
   const editing = useMemo(() => data?.data.find((w) => w.id === editingId), [data, editingId])
@@ -166,13 +167,8 @@ export default function ClientWorkflows() {
                   <TableCell className="text-right">
                     <Switch
                       checked={w.is_active}
-                      onCheckedChange={async (checked) => {
-                        // simple confirm; can replace with AlertDialog if needed
-                        const ok = window.confirm(
-                          `Set workflow ${checked ? 'Active' : 'Inactive'}?`
-                        )
-                        if (!ok) return
-                        await upsert.mutateAsync({ id: w.id, is_active: checked })
+                      onCheckedChange={(checked) => {
+                        setPendingToggle({ id: w.id, next: checked })
                       }}
                     />
                   </TableCell>
@@ -236,6 +232,48 @@ export default function ClientWorkflows() {
               }}
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!pendingToggle}
+        onOpenChange={(v) => {
+          if (!v) setPendingToggle(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader className="border-b pb-4">
+            <AlertDialogTitle>Change workflow status?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogDescription>
+            Set workflow to{' '}
+            {pendingToggle?.next ? (
+              <span className="font-medium rounded-md px-2 py-0.5 bg-green-50 text-green-600">
+                Active
+              </span>
+            ) : (
+              <span className="font-medium rounded-md px-2 py-0.5 bg-red-50 text-red-600">
+                Inactive
+              </span>
+            )}
+            .
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline">Cancel</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (pendingToggle) {
+                  await upsert.mutateAsync({ id: pendingToggle.id, is_active: pendingToggle.next })
+                }
+                setPendingToggle(null)
+              }}
+              asChild
+            >
+              <Button variant="default">Confirm</Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

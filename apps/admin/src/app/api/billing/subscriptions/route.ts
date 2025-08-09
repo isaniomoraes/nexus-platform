@@ -22,7 +22,7 @@ export async function GET() {
   if (clientsErr) return NextResponse.json({ error: clientsErr.message }, { status: 400 })
   if (subsErr) return NextResponse.json({ error: subsErr.message }, { status: 400 })
 
-  const latestByClient = new Map<string, any>()
+  const latestByClient = new Map<string, typeof subs extends Array<infer T> ? T : never>()
   for (const s of subs ?? []) {
     if (!latestByClient.has(s.client_id)) latestByClient.set(s.client_id, s)
   }
@@ -35,7 +35,7 @@ export async function GET() {
       client_id: c.id,
       client_name: c.name,
       plan_id: sub?.plan_id ?? null,
-      plan_name: (sub as any)?.plans?.name ?? null,
+      plan_name: (sub as { plans: { name: string }[] })?.plans?.[0]?.name ?? null,
       monthly_price: sub?.monthly_price ?? null,
       period_start: sub?.current_period_start ?? null,
       period_end: sub?.current_period_end ?? null,
