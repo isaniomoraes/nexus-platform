@@ -28,10 +28,12 @@ export function RecentInvoices({ items }: { items: InvoiceItem[] }) {
                 <div className="font-medium tabular-nums">
                   ${inv.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </div>
-                <Button variant="outline" size="sm" asChild>
-                  <a href={inv.href} target="_blank" rel="noreferrer">
-                    <Download className="size-4" />
-                  </a>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(inv.href, '_blank', 'noopener,noreferrer')}
+                >
+                  <Download className="size-4" />
                 </Button>
               </div>
             </div>
