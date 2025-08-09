@@ -21,6 +21,7 @@ export * from './ui/switch'
 export * from './ui/badge'
 export * from './ui/sonner'
 export * from './ui/scroll-area'
+export * from './ui/toggle-group'
 
 // Hooks
 export * from '../hooks/use-mobile'

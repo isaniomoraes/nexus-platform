@@ -1,11 +1,11 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@nexus/ui/components'
-import { SECard } from './se-card'
-import DashboardSkeleton from './dashboard-skeleton'
+import { SECard } from './components/se-card'
+import DashboardSkeleton from './components/dashboard-skeleton'
 import { useMemo } from 'react'
 import { useClientSEs, useMetrics, usePipeline } from '@/src/hooks/use-dashboard'
-import { PhaseStatus } from './phase-status'
+import { PhaseStatus } from './components/phase-status'
 import { LayersIcon } from 'lucide-react'
 
 export default function ClientDashboard() {

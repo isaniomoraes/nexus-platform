@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseAndUser, requireAdminOrSE, elevateForAdminOps } from '@/src/lib/auth'
-import { createClientSchema } from '@nexus/shared'
+import { createClientSchema, PIPELINE_PHASES } from '@nexus/shared'
 
 export async function GET() {
   const { supabase: baseClient, dbUser } = await getSupabaseAndUser()
@@ -51,6 +51,19 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const clientId = data.id as string
+
+  // Seed pipeline phases for the new client
+  const phaseRows = (PIPELINE_PHASES as readonly string[]).map((name, idx) => ({
+    client_id: clientId,
+    phase_name: name,
+    position: idx + 1,
+  }))
+  const { error: pipelineErr } = await supabase.from('client_pipeline_phases').insert(phaseRows)
+  if (pipelineErr) {
+    // Do not fail client creation if seeding phases fails, but surface error in response
+    // eslint-disable-next-line no-console
+    console.error('Failed to seed client pipeline phases', pipelineErr)
+  }
   // Create initial client users via Supabase Auth (service role) and insert rows
   const users = parsed.data.users ?? []
   let createdUsers = 0

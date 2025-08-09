@@ -83,7 +83,7 @@ export default function ClientsList({
         <Table containerClassName={containerClassName} className={tableClassName}>
           <TableHeader>
             <TableRow>
-              <TableHead>Client Name</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Contract Start</TableHead>
               <TableHead className="text-right">Workflows</TableHead>
               <TableHead className="text-right">Executions</TableHead>

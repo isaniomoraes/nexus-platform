@@ -31,6 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Skeleton,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -198,6 +199,44 @@ export default function SubscriptionsClient() {
     if (!confirmId) return
     deletePlan.mutate(confirmId)
     setConfirmId(null)
+  }
+
+  if (plansQuery.isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Pricing Model</TableHead>
+                <TableHead>Contract Length</TableHead>
+                <TableHead>Billing Cadence</TableHead>
+                <TableHead>Setup Fee</TableHead>
+                <TableHead>Prepayment %</TableHead>
+                <TableHead>$ Cap</TableHead>
+                <TableHead>Overage Cost</TableHead>
+                <TableHead># Clients</TableHead>
+                <TableHead className="w-[60px]" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <TableRow key={idx}>
+                  <TableCell colSpan={10}>
+                    <Skeleton className="h-8 w-full" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    )
   }
 
   return (

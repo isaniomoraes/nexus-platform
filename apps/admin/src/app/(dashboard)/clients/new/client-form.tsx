@@ -139,11 +139,11 @@ export default function NewClientForm() {
                 <TableRow>
                   <TableHead className="min-w-48">Name</TableHead>
                   <TableHead className="min-w-56">Email</TableHead>
+                  <TableHead className="min-w-40">Password</TableHead>
                   <TableHead className="min-w-40">Phone</TableHead>
                   <TableHead className="min-w-40">Department</TableHead>
                   <TableHead className="min-w-40">Alerts</TableHead>
                   <TableHead className="min-w-40">Access</TableHead>
-                  <TableHead className="min-w-40">Password</TableHead>
                   <TableHead className="w-12">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -157,6 +157,13 @@ export default function NewClientForm() {
                       <Input placeholder="Email" {...form.register(`users.${idx}.email`)} />
                     </TableCell>
                     <TableCell>
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        {...form.register(`users.${idx}.password`)}
+                      />
+                    </TableCell>
+                    <TableCell>
                       <Input placeholder="Phone" {...form.register(`users.${idx}.phone`)} />
                     </TableCell>
                     <TableCell>
@@ -167,7 +174,7 @@ export default function NewClientForm() {
                           form.setValue(`users.${idx}.department`, v, { shouldDirty: true })
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="min-w-40">
                           <SelectValue
                             placeholder={validDepartments.length ? 'Department' : 'Add dept first'}
                           />
@@ -182,35 +189,28 @@ export default function NewClientForm() {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-start flex-col gap-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
                           <Checkbox {...form.register(`users.${idx}.emailAlerts` as const)} />
                           <span className="text-sm">Email</span>
-                        </div>
-                        <div className="flex items-center gap-2">
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
                           <Checkbox {...form.register(`users.${idx}.smsAlerts` as const)} />
                           <span className="text-sm">SMS</span>
-                        </div>
+                        </label>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-start flex-col gap-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
                           <Checkbox {...form.register(`users.${idx}.hasBillingAccess` as const)} />
                           <span className="text-sm">Billing</span>
-                        </div>
-                        <div className="flex items-center gap-2">
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
                           <Checkbox {...form.register(`users.${idx}.canManageUsers` as const)} />
                           <span className="text-sm">Admin</span>
-                        </div>
+                        </label>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="password"
-                        placeholder="Password"
-                        {...form.register(`users.${idx}.password`)}
-                      />
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
