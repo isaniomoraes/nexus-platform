@@ -5,7 +5,6 @@ A comprehensive workflow automation platform built with Next.js 15, Supabase, an
 <img width="1840" height="1191" alt="Screenshot 2025-08-09 at 17 25 29" src="https://github.com/user-attachments/assets/4af9d998-d8b1-4c85-9505-0e15648316c7" />
 <img width="1840" height="1191" alt="Screenshot 2025-08-09 at 17 25 40" src="https://github.com/user-attachments/assets/3a8d4b25-910d-4a9b-8897-8296992adbc0" />
 
-
 ## Architecture
 
 This project implements a monorepo with two main applications:
