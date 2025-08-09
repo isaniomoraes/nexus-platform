@@ -21,22 +21,33 @@ export async function POST(request: Request) {
   })
 
   const { data } = await supabase.auth.getUser()
-  const userId = data.user?.id
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const email = data.user?.email ?? ''
+  if (!email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: row, error } = await supabase
     .from('users')
-    .select('role, assigned_clients')
-    .eq('id', userId)
+    .select('id, role')
+    .eq('email', email)
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   if (row?.role !== 'se')
     return NextResponse.json({ error: 'Only SE can switch client' }, { status: 403 })
-  const list = (row.assigned_clients ?? []) as string[]
-  if (!list.includes(clientId))
+  // Validate against clients.assigned_ses contains this users.id
+  const { data: rows } = await supabase
+    .from('clients')
+    .select('id')
+    .contains('assigned_ses', [row.id])
+  const allowed = new Set((rows ?? []).map((c) => c.id))
+  if (!allowed.has(clientId))
     return NextResponse.json({ error: 'Not assigned to client' }, { status: 403 })
 
-  await supabase.auth.updateUser({ data: { client_id: clientId } })
+  // also update assigned_clients claim to include all currently allowed clients for this SE
+  const { data: allAllowed } = await supabase
+    .from('clients')
+    .select('id')
+    .contains('assigned_ses', [row.id])
+  const allowedIds = (allAllowed ?? []).map((c) => c.id)
+  await supabase.auth.updateUser({ data: { client_id: clientId, assigned_clients: allowedIds } })
   response.cookies.set({ name: 'current_client_id', value: clientId, path: '/' })
   return response
 }

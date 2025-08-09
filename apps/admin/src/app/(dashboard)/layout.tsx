@@ -1,4 +1,4 @@
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@nexus/ui/components'
+import { ScrollArea, SidebarInset, SidebarProvider, SidebarTrigger } from '@nexus/ui/components'
 import { AppSidebar } from '../../components/app-sidebar'
 import { PageTitle } from '../../components/page-title'
 import { UserMenu } from '../../components/user-menu'
@@ -23,7 +23,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
           <UserMenu />
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>
+        <ScrollArea className="h-[calc(100svh-64px)] pb-4">
+          <div className="flex flex-1 flex-col gap-4 p-4">{children}</div>
+        </ScrollArea>
       </SidebarInset>
     </SidebarProvider>
   )

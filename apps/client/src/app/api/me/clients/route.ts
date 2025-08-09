@@ -1,29 +1,15 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { SUPABASE_CONFIG } from '@nexus/database'
+import { getSupabaseRouteClient } from '../../../../lib/supabase-route'
 
 export async function GET() {
-  const response = NextResponse.json({ ok: true })
-  const supabase = createServerClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
-    cookies: {
-      get() {
-        return ''
-      },
-      set(name, value, options) {
-        response.cookies.set({ name, value, ...options })
-      },
-      remove(name, options) {
-        response.cookies.set({ name, value: '', ...options })
-      },
-    },
-  })
+  const { supabase, response } = await getSupabaseRouteClient()
 
   const { data } = await supabase.auth.getUser()
   const userId = data.user?.id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { data: me, error } = await supabase
     .from('users')
-    .select('role, client_id, assigned_clients')
+    .select('id, role, client_id')
     .eq('id', userId)
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
@@ -41,12 +27,14 @@ export async function GET() {
       current = me.client_id
     }
   } else if (me?.role === 'se') {
-    const list = (me.assigned_clients ?? []) as string[]
-    if (list.length) {
-      const { data: rows } = await supabase.from('clients').select('id,name').in('id', list)
+    if (me.id) {
+      const { data: rows } = await supabase
+        .from('clients')
+        .select('id,name')
+        .contains('assigned_ses', [me.id])
       clients = rows ?? []
-      current = me.client_id ?? list[0]
+      current = me.client_id ?? clients[0]?.id
     }
   }
-  return NextResponse.json({ clients, current_client_id: current })
+  return NextResponse.json({ clients, current_client_id: current }, { headers: response.headers })
 }

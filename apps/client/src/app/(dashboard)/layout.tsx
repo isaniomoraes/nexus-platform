@@ -2,8 +2,16 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@nexus/ui/compone
 import { AppSidebar } from '../../components/app-sidebar'
 import { PageTitle } from '../../components/page-title'
 import { UserMenu } from '../../components/user-menu'
+import { getSupabaseServer } from '../../lib/supabase-server'
+import { redirect } from 'next/navigation'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  // Server-side auth guard (mirrors admin)
+  const supabase = getSupabaseServer()
+  const { data } = await (await supabase).auth.getUser()
+  if (!data.user) {
+    redirect('/login')
+  }
   return (
     <SidebarProvider>
       <AppSidebar variant="inset" />

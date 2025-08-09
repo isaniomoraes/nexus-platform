@@ -44,7 +44,10 @@ export default function ClientWorkflows() {
   const del = useDeleteWorkflow(clientId!)
   const editing = useMemo(() => data?.data.find((w) => w.id === editingId), [data, editingId])
   const departments = useMemo(
-    () => (clientOverview?.client.departments ?? []).filter(Boolean),
+    () =>
+      (clientOverview?.client.departments ?? []).filter(
+        (d): d is string => typeof d === 'string' && d.trim().length > 0
+      ),
     [clientOverview]
   )
 

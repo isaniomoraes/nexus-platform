@@ -1,58 +1,24 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { SUPABASE_CONFIG } from '@nexus/database'
+import { getSupabaseRouteClient } from '../../../lib/supabase-route'
+import { getCurrentClientId } from '../../../lib/current-client'
 
 export async function GET() {
-  const response = NextResponse.json({ ok: true })
-  const supabase = createServerClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
-    cookies: {
-      get() {
-        return ''
-      },
-      set(name, value, options) {
-        response.cookies.set({ name, value, ...options })
-      },
-      remove(name, options) {
-        response.cookies.set({ name, value: '', ...options })
-      },
-    },
-  })
+  const { supabase, response } = await getSupabaseRouteClient()
 
-  const { data: auth } = await supabase.auth.getUser()
-  const userId = auth.user?.id
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { data: me, error: meErr } = await supabase
-    .from('users')
-    .select('client_id')
-    .eq('id', userId)
-    .single()
-  if (meErr) return NextResponse.json({ error: meErr.message }, { status: 400 })
-  if (!me?.client_id) return NextResponse.json({ data: [] })
+  const { clientId } = await getCurrentClientId(supabase)
+  if (!clientId) return NextResponse.json({ data: [] }, { headers: response.headers })
 
   const { data, error } = await supabase
     .from('users')
     .select('id,name,email,phone,role')
-    .eq('client_id', me.client_id)
+    .eq('client_id', clientId)
     .eq('role', 'client')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ data })
+  return NextResponse.json({ data }, { headers: response.headers })
 }
 
 export async function POST(request: Request) {
-  const response = NextResponse.json({ ok: true })
-  const supabase = createServerClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
-    cookies: {
-      get() {
-        return ''
-      },
-      set(name, value, options) {
-        response.cookies.set({ name, value, ...options })
-      },
-      remove(name, options) {
-        response.cookies.set({ name, value: '', ...options })
-      },
-    },
-  })
+  const { supabase, response } = await getSupabaseRouteClient()
   const { data: auth } = await supabase.auth.getUser()
   const userId = auth.user?.id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -103,38 +69,23 @@ export async function POST(request: Request) {
     )
   }
   const authId = created.user.id
-  const { error: insertErr } = await supabase
-    .from('users')
-    .insert({
-      id: authId,
-      email: payload.email!,
-      name: payload.name!,
-      phone: payload.phone ?? null,
-      role: 'client',
-      client_id: clientId,
-    })
+  const { error: insertErr } = await supabase.from('users').insert({
+    id: authId,
+    email: payload.email!,
+    name: payload.name!,
+    phone: payload.phone ?? null,
+    role: 'client',
+    client_id: clientId,
+  })
   if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
   await admin.auth.admin.updateUserById(authId, {
     user_metadata: { user_role: 'client', client_id: clientId },
   })
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true }, { headers: response.headers })
 }
 
 export async function DELETE(request: Request) {
-  const response = NextResponse.json({ ok: true })
-  const supabase = createServerClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
-    cookies: {
-      get() {
-        return ''
-      },
-      set(name, value, options) {
-        response.cookies.set({ name, value, ...options })
-      },
-      remove(name, options) {
-        response.cookies.set({ name, value: '', ...options })
-      },
-    },
-  })
+  const { supabase, response } = await getSupabaseRouteClient()
   const { data: auth } = await supabase.auth.getUser()
   const userId = auth.user?.id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -159,5 +110,5 @@ export async function DELETE(request: Request) {
     const admin = createServiceServerClient()
     await admin.auth.admin.deleteUser(id)
   }
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true }, { headers: response.headers })
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { SUPABASE_CONFIG } from '@nexus/database'
+import { getSupabaseRouteClient } from '../../../lib/supabase-route'
+import { getCurrentClientId } from '../../../lib/current-client'
 
 type DbExceptionRow = {
   id: string
@@ -15,32 +15,10 @@ type DbExceptionRow = {
 }
 
 export async function GET(request: Request) {
-  const response = NextResponse.json({ ok: true })
-  const supabase = createServerClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
-    cookies: {
-      get() {
-        return ''
-      },
-      set(name, value, options) {
-        response.cookies.set({ name, value, ...options })
-      },
-      remove(name, options) {
-        response.cookies.set({ name, value: '', ...options })
-      },
-    },
-  })
+  const { supabase, response } = await getSupabaseRouteClient()
 
-  const { data: auth } = await supabase.auth.getUser()
-  const userId = auth.user?.id
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { data: me, error: meErr } = await supabase
-    .from('users')
-    .select('role, client_id')
-    .eq('id', userId)
-    .single()
-  if (meErr) return NextResponse.json({ error: meErr.message }, { status: 400 })
-  const clientId = me?.client_id
-  if (!clientId) return NextResponse.json({ data: [] })
+  const { clientId } = await getCurrentClientId(supabase)
+  if (!clientId) return NextResponse.json({ data: [] }, { headers: response.headers })
 
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type') ?? undefined
@@ -74,5 +52,5 @@ export async function GET(request: Request) {
     department: r.workflows?.department ?? '—',
   }))
 
-  return NextResponse.json({ data: rows })
+  return NextResponse.json({ data: rows }, { headers: response.headers })
 }

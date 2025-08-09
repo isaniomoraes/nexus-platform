@@ -39,6 +39,7 @@ import {
 import { Logo } from '@nexus/ui/components'
 import { useMe } from '@/src/hooks/use-me'
 import { useRouter } from 'next/navigation'
+import { ClientSwitcher } from '@/src/components/client-switcher'
 
 const menuItems = [
   {
@@ -110,6 +111,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
+            {me.data?.data.role === 'se' ? (
+              <div className="px-2 pb-2">
+                <ClientSwitcher />
+              </div>
+            ) : null}
             <SidebarMenu>
               {menuItems.map((item) => {
                 const isActive = pathname === item.url

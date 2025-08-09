@@ -117,25 +117,25 @@ export function WorkflowEditorSheet({
             <Label>Department</Label>
             <Select
               value={form.watch('department')}
+              disabled={departments.length === 0}
               onValueChange={(v) => form.setValue('department', v, { shouldDirty: true })}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
               <SelectContent>
-                {departments.length === 0 ? (
-                  <SelectItem value="" disabled>
-                    No departments defined
+                {departments.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d}
                   </SelectItem>
-                ) : (
-                  departments.map((d) => (
-                    <SelectItem key={d} value={d}>
-                      {d}
-                    </SelectItem>
-                  ))
-                )}
+                ))}
               </SelectContent>
             </Select>
+            {departments.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Add at least one department on the client first.
+              </p>
+            ) : null}
           </div>
           <div className="space-y-1">
             <Label htmlFor="description">Description</Label>

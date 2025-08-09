@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Button, Input, Label } from '@nexus/ui/components'
+import { Badge, Button, Input, Label } from '@nexus/ui/components'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { AlertCircleIcon } from 'lucide-react'
 
 function LoginInner() {
   const router = useRouter()
@@ -33,12 +34,20 @@ function LoginInner() {
 
   return (
     <div className="min-h-screen grid place-items-center p-6">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-lg border p-6">
-        <div>
-          <h1 className="text-xl font-semibold">Sign in</h1>
-          <p className="text-sm text-muted-foreground">Client portal</p>
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm space-y-4 rounded-lg p-6 bg-white shadow-md"
+      >
+        <div className="text-center">
+          <h1 className="text-xl font-semibold">Sign in to Nexus</h1>
+          <Badge variant="secondary">Client Portal</Badge>
         </div>
-        {error && <div className="text-sm text-destructive">{error}</div>}
+        {error && (
+          <div className="text-sm text-destructive text-center rounded-md flex items-center justify-center gap-2 bg-red-50 py-2">
+            <AlertCircleIcon className="w-4 h-4 shrink-0" />
+            {error}
+          </div>
+        )}
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -46,6 +55,7 @@ function LoginInner() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
             required
           />
         </div>
@@ -57,6 +67,7 @@ function LoginInner() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            placeholder="********"
           />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>

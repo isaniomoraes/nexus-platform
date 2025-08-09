@@ -51,8 +51,8 @@ export default function ClientDashboard() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Pipeline Progress</h2>
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-lg border bg-card p-4 h-full">
+          <h2 className="text-xl font-semibold">Pipeline Progress</h2>
           <ol className="space-y-3">
             {phases.map((p, i) => (
               <li key={p.id} className="flex items-start gap-3">
@@ -110,14 +110,11 @@ export default function ClientDashboard() {
       </div>
 
       <div>
-        <div className="rounded-lg border bg-card p-6">
+        <div className="rounded-lg border bg-card p-6 shadow-sm">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={
-                se?.avatar ||
-                `https://api.dicebear.com/7.x/thumbs/svg?seed=${encodeURIComponent(se?.name ?? 'SE')}`
-              }
+              src={`https://api.dicebear.com/9.x/lorelei/svg?seed=${encodeURIComponent(se?.name ?? '')}`}
               className="size-12 rounded-full"
               alt="SE"
             />
