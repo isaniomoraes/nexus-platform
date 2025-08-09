@@ -13,17 +13,29 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Checkbox,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@nexus/ui/components'
 import { useClientOverview } from '@/src/hooks/use-client'
 import { useSEOptions } from '@/src/hooks/use-users'
 import { useUpdateClient } from '@/src/hooks/use-clients'
 import { useEffect } from 'react'
+import { useFieldArray } from 'react-hook-form'
+import { clientUserSchema } from '@nexus/shared'
+import ClientUsersTable from './client-users-table'
+import { TrashIcon } from 'lucide-react'
 
 const FormSchema = z.object({
   name: z.string().min(1),
   url: z.string().url(),
   departments: z.array(z.string()).default([]),
   assigned_ses: z.array(z.string().uuid()).default([]),
+  new_users: z.array(clientUserSchema).default([]),
 })
 type FormValues = z.infer<typeof FormSchema>
 
@@ -42,8 +54,15 @@ export default function EditClientForm() {
       url: data?.client.url ?? '',
       departments: data?.client.departments ?? [],
       assigned_ses: (data?.client.assigned_ses as string[] | undefined) ?? [],
+      new_users: [],
     },
   })
+
+  const newUsers = useFieldArray<FormValues>({ control: form.control, name: 'new_users' })
+  const deptList = form.watch('departments')
+  const validDepartments = (deptList ?? []).filter(
+    (d) => typeof d === 'string' && d.trim().length > 0
+  )
 
   useEffect(() => {
     if (!id) router.push('/clients')
@@ -97,6 +116,132 @@ export default function EditClientForm() {
         </div>
       </div>
 
+      <ClientUsersTable users={data?.users ?? []} />
+
+      <div className="rounded-lg border">
+        <div className="border-b p-4 font-medium">Add Users</div>
+        <div className="p-4 space-y-3">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-48">Name</TableHead>
+                  <TableHead className="min-w-56">Email</TableHead>
+                  <TableHead className="min-w-40">Password</TableHead>
+                  <TableHead className="min-w-40">Phone</TableHead>
+                  <TableHead className="min-w-40">Department</TableHead>
+                  <TableHead className="min-w-40">Alerts</TableHead>
+                  <TableHead className="min-w-40">Access</TableHead>
+                  <TableHead className="w-12">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {newUsers.fields.map((field, idx) => (
+                  <TableRow key={field.id}>
+                    <TableCell>
+                      <Input placeholder="Full name" {...form.register(`new_users.${idx}.name`)} />
+                    </TableCell>
+                    <TableCell>
+                      <Input placeholder="Email" {...form.register(`new_users.${idx}.email`)} />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        {...form.register(`new_users.${idx}.password`)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input placeholder="Phone" {...form.register(`new_users.${idx}.phone`)} />
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        disabled={validDepartments.length === 0}
+                        value={form.watch(`new_users.${idx}.department`)}
+                        onValueChange={(v) =>
+                          form.setValue(`new_users.${idx}.department`, v, { shouldDirty: true })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={validDepartments.length ? 'Department' : 'Add dept first'}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {validDepartments.map((d, i) => (
+                            <SelectItem key={`dept-opt-${i}`} value={d}>
+                              {d}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-start gap-2 flex-col">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <Checkbox {...form.register(`new_users.${idx}.emailAlerts` as const)} />
+                          <span className="text-sm">Email</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <Checkbox {...form.register(`new_users.${idx}.smsAlerts` as const)} />
+                          <span className="text-sm">SMS</span>
+                        </label>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-start gap-2 flex-col">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <Checkbox
+                            {...form.register(`new_users.${idx}.hasBillingAccess` as const)}
+                          />
+                          <span className="text-sm">Billing</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <Checkbox
+                            {...form.register(`new_users.${idx}.canManageUsers` as const)}
+                          />
+                          <span className="text-sm">Admin</span>
+                        </label>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => newUsers.remove(idx)}
+                        aria-label="Remove user"
+                      >
+                        <TrashIcon className="size-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              newUsers.append({
+                name: '',
+                email: '',
+                phone: '',
+                department: '',
+                emailAlerts: true,
+                smsAlerts: false,
+                hasBillingAccess: false,
+                canManageUsers: false,
+              })
+            }
+            className="gap-2"
+          >
+            + Add User
+          </Button>
+        </div>
+      </div>
+
       <div className="rounded-lg border">
         <div className="border-b p-4 font-medium">Assign Solutions Engineers</div>
         <div className="p-4 space-y-3">
@@ -128,8 +273,9 @@ export default function EditClientForm() {
                   form.setValue('assigned_ses', next as string[], { shouldDirty: true })
                 }}
                 aria-label="Remove SE"
+                size="icon"
               >
-                Remove
+                <TrashIcon className="size-4" />
               </Button>
             </div>
           ))}
@@ -150,7 +296,7 @@ export default function EditClientForm() {
         </div>
       </div>
 
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-start gap-3">
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Cancel
         </Button>

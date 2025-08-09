@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     const admin = createServiceServerClient()
     for (const u of users) {
       // Create auth user with a random password; require admin to share credentials out-of-band
-      const tempPassword = crypto.randomUUID()
+      const tempPassword = u.password && u.password.length >= 6 ? u.password : crypto.randomUUID()
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email: u.email,
         password: tempPassword,

@@ -46,7 +46,13 @@ export function useUpdateClient(clientId: string) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (
-      payload: Partial<{ name: string; url: string; departments: string[]; assigned_ses: string[] }>
+      payload: Partial<{
+        name: string
+        url: string
+        departments: string[]
+        assigned_ses: string[]
+        new_users: z.infer<typeof createClientSchema>['users']
+      }>
     ) => {
       const res = await fetch(`/api/clients/${clientId}`, {
         method: 'PATCH',

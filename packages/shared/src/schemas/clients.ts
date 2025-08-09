@@ -9,6 +9,7 @@ export const clientUserSchema = z.object({
   smsAlerts: z.boolean().default(false),
   hasBillingAccess: z.boolean().default(false),
   canManageUsers: z.boolean().default(false),
+  password: z.string().min(6).optional(),
 })
 
 export const createClientSchema = z.object({

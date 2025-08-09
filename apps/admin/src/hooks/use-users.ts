@@ -38,8 +38,14 @@ export function useSEOptions() {
 export function useUpsertUser() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (payload: Partial<UserRow> & { role: 'admin' | 'se' }) => {
-      const res = await fetch('/api/users', { method: 'POST', body: JSON.stringify(payload) })
+    mutationFn: async (
+      payload: Partial<UserRow> & { role: 'admin' | 'se' | 'client'; password?: string }
+    ) => {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
       if (!res.ok) throw new Error('Failed to save user')
       return res.json()
     },

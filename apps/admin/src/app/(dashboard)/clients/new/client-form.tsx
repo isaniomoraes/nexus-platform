@@ -14,6 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
   Checkbox,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@nexus/ui/components'
 import { useCreateClient } from '@/src/hooks/use-clients'
 import { useSEOptions } from '@/src/hooks/use-users'
@@ -127,71 +133,101 @@ export default function NewClientForm() {
       <div className="rounded-lg border">
         <div className="border-b p-4 font-medium">Users</div>
         <div className="p-4 space-y-3">
-          {users.fields.map((field, idx) => (
-            <div key={field.id} className="grid grid-cols-1 gap-3 md:grid-cols-9 items-center">
-              <Input
-                className="md:col-span-2"
-                placeholder="Full name"
-                {...form.register(`users.${idx}.name`)}
-              />
-              <Input
-                className="md:col-span-2"
-                placeholder="Email"
-                {...form.register(`users.${idx}.email`)}
-              />
-              <Input
-                className="md:col-span-1"
-                placeholder="Phone"
-                {...form.register(`users.${idx}.phone`)}
-              />
-              <Select
-                disabled={validDepartments.length === 0}
-                value={form.watch(`users.${idx}.department`)}
-                onValueChange={(v) =>
-                  form.setValue(`users.${idx}.department`, v, { shouldDirty: true })
-                }
-              >
-                <SelectTrigger className="md:col-span-1">
-                  <SelectValue
-                    placeholder={validDepartments.length ? 'Department' : 'Add dept first'}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {validDepartments.map((d, i) => (
-                    <SelectItem key={`dept-opt-${i}`} value={d}>
-                      {d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="md:col-span-2 flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Checkbox {...form.register(`users.${idx}.emailAlerts` as const)} />{' '}
-                  <span className="text-sm">Email</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox {...form.register(`users.${idx}.smsAlerts` as const)} />{' '}
-                  <span className="text-sm">SMS</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox {...form.register(`users.${idx}.hasBillingAccess` as const)} />{' '}
-                  <span className="text-sm">Billing</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox {...form.register(`users.${idx}.canManageUsers` as const)} />{' '}
-                  <span className="text-sm">Admin</span>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => users.remove(idx)}
-                aria-label="Remove user"
-              >
-                <TrashIcon className="size-4" />
-              </Button>
-            </div>
-          ))}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-48">Name</TableHead>
+                  <TableHead className="min-w-56">Email</TableHead>
+                  <TableHead className="min-w-40">Phone</TableHead>
+                  <TableHead className="min-w-40">Department</TableHead>
+                  <TableHead className="min-w-40">Alerts</TableHead>
+                  <TableHead className="min-w-40">Access</TableHead>
+                  <TableHead className="min-w-40">Password</TableHead>
+                  <TableHead className="w-12">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.fields.map((field, idx) => (
+                  <TableRow key={field.id}>
+                    <TableCell>
+                      <Input placeholder="Full name" {...form.register(`users.${idx}.name`)} />
+                    </TableCell>
+                    <TableCell>
+                      <Input placeholder="Email" {...form.register(`users.${idx}.email`)} />
+                    </TableCell>
+                    <TableCell>
+                      <Input placeholder="Phone" {...form.register(`users.${idx}.phone`)} />
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        disabled={validDepartments.length === 0}
+                        value={form.watch(`users.${idx}.department`)}
+                        onValueChange={(v) =>
+                          form.setValue(`users.${idx}.department`, v, { shouldDirty: true })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={validDepartments.length ? 'Department' : 'Add dept first'}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {validDepartments.map((d, i) => (
+                            <SelectItem key={`dept-opt-${i}`} value={d}>
+                              {d}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Checkbox {...form.register(`users.${idx}.emailAlerts` as const)} />
+                          <span className="text-sm">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox {...form.register(`users.${idx}.smsAlerts` as const)} />
+                          <span className="text-sm">SMS</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Checkbox {...form.register(`users.${idx}.hasBillingAccess` as const)} />
+                          <span className="text-sm">Billing</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox {...form.register(`users.${idx}.canManageUsers` as const)} />
+                          <span className="text-sm">Admin</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        {...form.register(`users.${idx}.password`)}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => users.remove(idx)}
+                        aria-label="Remove user"
+                      >
+                        <TrashIcon className="size-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
           <Button type="button" variant="outline" onClick={addUser} className="gap-2">
             <Plus className="size-4" /> Add User
           </Button>
