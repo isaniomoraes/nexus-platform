@@ -28,5 +28,3 @@ export async function getCurrentClientId(
   }
   return { clientId: null, role }
 }
-
-

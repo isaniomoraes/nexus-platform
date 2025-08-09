@@ -60,7 +60,10 @@ export async function POST(request: Request) {
         .select('id')
         .contains('assigned_ses', [row.id])
       debug.clients_by_db_id = clientRows ?? []
-      console.info('[client/login] clients_by_db_id', (clientRows ?? []).map((c) => c.id))
+      console.info(
+        '[client/login] clients_by_db_id',
+        (clientRows ?? []).map((c) => c.id)
+      )
       if (clientsErr || !Array.isArray(clientRows) || clientRows.length === 0) {
         // Fallback: also try matching by auth uid in case ids differ
         const authId = auth.user?.id
@@ -70,7 +73,10 @@ export async function POST(request: Request) {
             .select('id')
             .contains('assigned_ses', [authId])
           debug.clients_by_auth_id = byAuth ?? []
-          console.info('[client/login] clients_by_auth_id', (byAuth ?? []).map((c) => c.id))
+          console.info(
+            '[client/login] clients_by_auth_id',
+            (byAuth ?? []).map((c) => c.id)
+          )
           if (Array.isArray(byAuth) && byAuth.length > 0) {
             const selected = (json as { client_id?: string })?.client_id
             const allowedIds = byAuth.map((c) => c.id)

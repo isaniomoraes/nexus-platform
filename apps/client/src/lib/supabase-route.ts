@@ -26,5 +26,3 @@ export async function getSupabaseRouteClient() {
   const getCookie = (name: string): string | undefined => cookieStore.get(name)?.value
   return { supabase, response, getCookie }
 }
-
-
