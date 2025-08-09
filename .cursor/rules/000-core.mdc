@@ -21,7 +21,7 @@ priority: 100
 - **Database**: Supabase (PostgreSQL)
 - **API**: tRPC for type-safe endpoints
 - **Auth**: Basic auth system (no WorkOS/OAuth2 for test)
-- **State Management**: React Query (@tanstack/react-query) + Zustand where needed
+- **State Management**: React Query (@tanstack/react-query)
 - **Form Handling**: React Hook Form + Zod validation
 - **Data Tables**: TanStack Table for complex data grids
 - **Icons**: Lucide React

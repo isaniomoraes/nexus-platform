@@ -19,7 +19,7 @@ This project implements a monorepo with two main applications:
 - **Auth**: Supabase Auth with role-based access
 - **Monorepo**: Turborepo with pnpm
 - **UI Components**: shadcn/ui with custom sidebar implementation
-- **State Management**: React Query + Zustand
+- **State Management**: React Query
 - **Form Handling**: React Hook Form + Zod validation
 
 ## Quick Start
