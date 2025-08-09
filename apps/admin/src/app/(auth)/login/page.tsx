@@ -3,29 +3,25 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button, Input, Label } from '@nexus/ui/components'
+import { Button, Input, Label, Logo } from '@nexus/ui/components'
+import { useLogin } from '@/src/hooks/use-auth'
+import { AlertCircleIcon } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const router = useRouter()
+  const login = useLogin()
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError(null)
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    })
-    setLoading(false)
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      setError(body.error ?? 'Login failed')
-    } else {
+    try {
+      await login.mutateAsync({ email, password })
       router.replace('/dashboard')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed')
     }
   }
 
@@ -33,6 +29,7 @@ export default function LoginPage() {
     <div className="flex min-h-[calc(100vh-80px)] items-center justify-center p-6">
       <div className="w-full max-w-sm rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
         <div className="mb-6 text-center">
+          <Logo className="mx-auto mb-4 size-8" />
           <h1 className="text-xl font-semibold">Welcome back</h1>
           <p className="text-sm text-muted-foreground">Sign in to continue to Nexus Admin</p>
         </div>
@@ -44,6 +41,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
               required
             />
           </div>
@@ -54,12 +52,18 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
               required
             />
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign in'}
+          {error && (
+            <div className="text-sm text-destructive text-center rounded-md flex items-center justify-center gap-2 bg-red-50 py-2">
+              <AlertCircleIcon className="w-4 h-4 shrink-0" />
+              {error}
+            </div>
+          )}
+          <Button type="submit" className="w-full" disabled={login.isPending}>
+            {login.isPending ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">

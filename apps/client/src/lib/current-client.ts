@@ -1,30 +1,43 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { cookies as nextCookies } from 'next/headers'
 
 type Role = 'admin' | 'se' | 'client'
 
 export async function getCurrentClientId(
   supabase: SupabaseClient
-): Promise<{ clientId: string | null; role: Role | null }> {
+): Promise<{ clientId: string | null; role: Role | null; debug: Record<string, unknown> }> {
+  const debug: Record<string, unknown> = {}
   const { data: auth } = await supabase.auth.getUser()
   const user = auth.user
-  if (!user) return { clientId: null, role: null }
+  debug.auth_user = { id: user?.id, email: user?.email, meta: user?.user_metadata }
+  if (!user) return { clientId: null, role: null, debug }
 
-  // Read role from users row (authoritative for our system)
-  const { data: me } = await supabase
+  const { data: me, error: meError } = await supabase
     .from('users')
     .select('role, client_id, assigned_clients')
     .eq('id', user.id)
     .single()
+  if (meError) debug.me_error = meError.message
+  debug.me_row = me ?? null
   const role = (me?.role as Role | undefined) ?? null
 
   if (role === 'client') {
-    return { clientId: (me?.client_id as string | null) ?? null, role }
+    const clientId = (me?.client_id as string | null) ?? null
+    debug.client_path = 'role=client:me.client_id'
+    return { clientId, role, debug }
   }
   if (role === 'se') {
-    // For SE, we store the selected client in the JWT/user_metadata at login or switch-client
-    const meta = (user.user_metadata ?? {}) as { client_id?: string }
-    const selected = meta.client_id ?? null
-    return { clientId: selected ?? null, role }
+    const meta = (user.user_metadata ?? {}) as { client_id?: string; assigned_clients?: string[] }
+    const jwtClientId = meta.client_id ?? null
+    const cookieStore = await nextCookies().catch(() => undefined)
+    const cookieClientId = cookieStore?.get('current_client_id')?.value ?? null
+    const selected = jwtClientId || cookieClientId
+    debug.client_path = 'role=se:jwt_client_id||cookie_current_client_id'
+    debug.jwt_client_id = jwtClientId
+    debug.cookie_client_id = cookieClientId
+    debug.assigned_clients = meta.assigned_clients ?? []
+    return { clientId: selected ?? null, role, debug }
   }
-  return { clientId: null, role }
+  debug.client_path = 'role=unknown'
+  return { clientId: null, role, debug }
 }

@@ -13,7 +13,7 @@ const routeMap: Record<string, string> = {
   '/clients': 'Clients',
   '/users': 'Users',
   '/billing': 'Billing',
-  '/subscriptions': 'Subscriptions',
+  '/workflows': 'Workflows ROI',
   '/reporting': 'Reporting',
   '/exceptions': 'Exceptions',
   '/messaging': 'Messaging',

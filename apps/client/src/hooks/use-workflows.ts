@@ -45,3 +45,23 @@ export function useUpdateWorkflow() {
     },
   })
 }
+
+type CreateWorkflowInput = Omit<WorkflowUpsertInput, 'id' | 'client_id'>
+
+export function useCreateWorkflow() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (input: CreateWorkflowInput) => {
+      const res = await fetch('/api/workflows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      })
+      if (!res.ok) throw new Error('Failed to create workflow')
+      return res.json().catch(() => ({}))
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['client', 'workflows'] })
+    },
+  })
+}

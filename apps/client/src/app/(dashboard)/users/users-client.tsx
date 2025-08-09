@@ -66,8 +66,7 @@ export function UsersClient() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold">Client Users</h3>
+      <div className="flex items-center justify-end gap-2">
         <Button
           size="sm"
           className="gap-2"

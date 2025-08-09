@@ -1,108 +1,108 @@
 'use client'
 
-import { Card } from '@nexus/ui/components'
-import { useEffect, useMemo, useState } from 'react'
-
-type Phase = { id: string; name: string; completed_at?: string | null }
-
-type Metrics = {
-  timeSaved7d: number
-  timeSavedTotal: number
-  moneySaved7d: number
-  moneySavedTotal: number
-  activeWorkflows: number
-}
+import { Card, CardContent, CardHeader, CardTitle } from '@nexus/ui/components'
+import { SECard } from './se-card'
+import DashboardSkeleton from './dashboard-skeleton'
+import { useMemo } from 'react'
+import { useClientSEs, useMetrics, usePipeline } from '@/src/hooks/use-dashboard'
+import { LayersIcon } from 'lucide-react'
 
 export default function ClientDashboard() {
-  const [phases, setPhases] = useState<Phase[]>([])
-  const [metrics, setMetrics] = useState<Metrics | null>(null)
-  const [se, setSe] = useState<{ name: string; avatar?: string } | null>(null)
+  const { data: pipelineData } = usePipeline()
+  const { data: metrics } = useMetrics()
+  const { data: seData } = useClientSEs()
 
-  useEffect(() => {
-    let mounted = true
-    async function load() {
-      const [p, m, s] = await Promise.all([
-        fetch('/api/dashboard/pipeline')
-          .then((r) => r.json())
-          .catch(() => null),
-        fetch('/api/dashboard/metrics')
-          .then((r) => r.json())
-          .catch(() => null),
-        fetch('/api/dashboard/se')
-          .then((r) => r.json())
-          .catch(() => null),
-      ])
-      if (!mounted) return
-      setPhases(p?.pipeline ?? [])
-      setMetrics(m ?? null)
-      setSe(s?.se ?? null)
-    }
-    load()
-    return () => {
-      mounted = false
-    }
-  }, [])
-
+  const phases = useMemo(() => pipelineData?.pipeline ?? [], [pipelineData])
+  const ses = useMemo(() => seData?.ses ?? [], [seData])
   const [, activeIndex] = useMemo(() => {
     const idx = phases.findIndex((ph) => !ph.completed_at)
     return [null, idx === -1 ? phases.length : idx]
   }, [phases])
 
+  if (!pipelineData || !metrics || !seData) {
+    return <DashboardSkeleton />
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="space-y-4">
-        <div className="rounded-lg border bg-card p-4 h-full">
-          <h2 className="text-xl font-semibold">Pipeline Progress</h2>
-          <ol className="space-y-3">
-            {phases.map((p, i) => (
-              <li key={p.id} className="flex items-start gap-3">
-                <span
-                  className={
-                    i < activeIndex
-                      ? 'bg-green-500 mt-1 size-2 rounded-full'
-                      : i === activeIndex
-                        ? 'bg-blue-500 mt-1 size-2 rounded-full'
-                        : 'bg-muted-foreground/30 mt-1 size-2 rounded-full'
-                  }
-                />
-                <div>
-                  <div className="font-medium">{p.name}</div>
-                  {p.completed_at ? (
-                    <div className="text-xs text-muted-foreground">
-                      Completed {new Date(p.completed_at).toLocaleDateString()}
-                    </div>
-                  ) : i === activeIndex ? (
-                    <div className="text-xs text-blue-600">In Progress</div>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
+        <Card className="">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <span className="rounded-md bg-sidebar flex items-center justify-center size-6 border border-sidebar-foreground/40 shadow">
+                <LayersIcon className="size-4" />
+              </span>
+              Pipeline Progress
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="space-y-3">
+              {phases.map((p, i) => (
+                <li key={p.id} className="flex items-start gap-3">
+                  <span
+                    className={
+                      i < activeIndex
+                        ? 'bg-green-500 mt-1 size-2 rounded-full'
+                        : i === activeIndex
+                          ? 'bg-blue-500 mt-1 size-2 rounded-full'
+                          : 'bg-muted-foreground/30 mt-1 size-2 rounded-full'
+                    }
+                  />
+                  <div>
+                    <div className="font-medium">{p.name}</div>
+                    {p.completed_at ? (
+                      <div className="text-xs text-muted-foreground">
+                        Completed {new Date(p.completed_at).toLocaleDateString()}
+                      </div>
+                    ) : i === activeIndex ? (
+                      <div className="text-xs text-blue-600">In Progress</div>
+                    ) : null}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="space-y-4">
         <Card className="p-4">
-          <div className="text-sm text-muted-foreground">Time Saved</div>
-          <div className="text-3xl font-bold">{(metrics?.timeSaved7d ?? 0).toFixed(1)} hrs</div>
-          <div className="text-xs text-muted-foreground">Last 7 days</div>
-          <div className="mt-3 text-3xl font-bold">
-            {(metrics?.timeSavedTotal ?? 0).toFixed(1)} hrs
+          <div className="text-sm text-muted-foreground mb-3">Time Saved</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="text-2xl font-bold tabular-nums">
+                {(metrics?.timeSaved7d ?? 0).toFixed(1)} hrs
+              </div>
+              <div className="text-xs text-muted-foreground">Last 7 days</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold tabular-nums">
+                {(metrics?.timeSavedTotal ?? 0).toFixed(1)} hrs
+              </div>
+              <div className="text-xs text-muted-foreground">All time</div>
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground">All time</div>
         </Card>
         <Card className="p-4">
-          <div className="text-sm text-muted-foreground">Money Saved</div>
-          <div className="text-3xl font-bold">${(metrics?.moneySaved7d ?? 0).toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">Last 7 days</div>
-          <div className="mt-3 text-3xl font-bold">
-            ${(metrics?.moneySavedTotal ?? 0).toLocaleString()}
+          <div className="text-sm text-muted-foreground mb-3">Money Saved</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="text-2xl font-bold tabular-nums">
+                ${(metrics?.moneySaved7d ?? 0).toLocaleString()}
+              </div>
+              <div className="text-xs text-muted-foreground">Last 7 days</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold tabular-nums">
+                ${(metrics?.moneySavedTotal ?? 0).toLocaleString()}
+              </div>
+              <div className="text-xs text-muted-foreground">All time</div>
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground">All time</div>
         </Card>
         <Card className="p-4">
-          <div className="text-sm text-muted-foreground">Active Workflows</div>
-          <div className="text-3xl font-bold">{metrics?.activeWorkflows ?? 0}</div>
+          <div className="text-sm text-muted-foreground mb-3">Active Workflows</div>
+          <div className="text-3xl font-bold tabular-nums">{metrics?.activeWorkflows ?? 0}</div>
           <a href="/workflows" className="text-sm text-blue-600 mt-2 inline-block">
             View workflows →
           </a>
@@ -110,23 +110,7 @@ export default function ClientDashboard() {
       </div>
 
       <div>
-        <div className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`https://api.dicebear.com/9.x/lorelei/svg?seed=${encodeURIComponent(se?.name ?? '')}`}
-              className="size-12 rounded-full"
-              alt="SE"
-            />
-            <div>
-              <div className="font-semibold">{se?.name ?? 'Solutions Engineer'}</div>
-              <div className="text-xs text-muted-foreground">Solutions Engineer</div>
-            </div>
-          </div>
-          <button className="mt-4 inline-flex h-9 items-center justify-center rounded-md bg-black px-4 text-sm font-medium text-white">
-            Message SE
-          </button>
-        </div>
+        <SECard ses={ses} />
       </div>
     </div>
   )

@@ -15,10 +15,16 @@ type DbExceptionRow = {
 }
 
 export async function GET(request: Request) {
-  const { supabase, response } = await getSupabaseRouteClient()
+  const { supabase, response, getCookie } = await getSupabaseRouteClient()
 
-  const { clientId } = await getCurrentClientId(supabase)
-  if (!clientId) return NextResponse.json({ data: [] }, { headers: response.headers })
+  const { clientId, role, debug: ctx } = await getCurrentClientId(supabase)
+  const debug: Record<string, unknown> = {
+    ctx,
+    role,
+    clientId,
+    cookie_current_client_id: getCookie('current_client_id'),
+  }
+  if (!clientId) return NextResponse.json({ data: [], debug }, { headers: response.headers })
 
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type') ?? undefined
@@ -36,7 +42,7 @@ export async function GET(request: Request) {
   if (severity) query = query.eq('severity', severity)
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) return NextResponse.json({ error: error.message, debug }, { status: 400 })
 
   const rows = (Array.isArray(data) ? (data as unknown as DbExceptionRow[]) : []).map((r) => ({
     id: r.id,
@@ -52,5 +58,5 @@ export async function GET(request: Request) {
     department: r.workflows?.department ?? '—',
   }))
 
-  return NextResponse.json({ data: rows }, { headers: response.headers })
+  return NextResponse.json({ data: rows, debug }, { headers: response.headers })
 }

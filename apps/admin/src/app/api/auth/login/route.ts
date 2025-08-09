@@ -42,6 +42,7 @@ export async function POST(request: Request) {
           assigned_clients: row.assigned_clients ?? [],
         },
       })
+      await supabase.auth.refreshSession()
     }
   }
   return response

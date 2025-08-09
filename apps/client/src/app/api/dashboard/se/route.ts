@@ -1,24 +1,30 @@
 import { NextResponse } from 'next/server'
 import { getSupabaseRouteClient } from '../../../../lib/supabase-route'
+import { getCurrentClientId } from '../../../../lib/current-client'
 
 export async function GET() {
   const { supabase, response } = await getSupabaseRouteClient()
-  const { data: auth } = await supabase.auth.getUser()
-  if (!auth.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { data: me } = await supabase
-    .from('users')
-    .select('client_id')
-    .eq('id', auth.user.id)
-    .single()
-  if (!me?.client_id) return NextResponse.json({ se: null })
-  // Find an assigned SE for this client
+  const { clientId } = await getCurrentClientId(supabase)
+  if (!clientId) return NextResponse.json({ ses: [] }, { headers: response.headers })
+
   const { data: client } = await supabase
     .from('clients')
     .select('assigned_ses')
-    .eq('id', me.client_id)
+    .eq('id', clientId)
     .single()
-  const seId = (client?.assigned_ses ?? [])[0]
-  if (!seId) return NextResponse.json({ se: null })
-  const { data: se } = await supabase.from('users').select('name').eq('id', seId).single()
-  return NextResponse.json({ se: se ? { name: se.name } : null }, { headers: response.headers })
+
+  const ids = (client?.assigned_ses ?? []) as string[]
+  if (!ids.length) return NextResponse.json({ ses: [] }, { headers: response.headers })
+
+  const { data: users, error } = await supabase
+    .from('users')
+    .select('id, name, email')
+    .in('id', ids)
+
+  if (error) return NextResponse.json({ ses: [] }, { headers: response.headers })
+
+  return NextResponse.json(
+    { ses: (users ?? []).map((u) => ({ id: u.id, name: u.name, email: u.email })) },
+    { headers: response.headers }
+  )
 }

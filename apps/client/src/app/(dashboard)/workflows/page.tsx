@@ -18,26 +18,45 @@ import {
   Switch,
 } from '@nexus/ui/components'
 import { format } from 'date-fns'
-import { MoreHorizontal } from 'lucide-react'
+import { CirclePlusIcon, MoreHorizontal } from 'lucide-react'
 import type { WorkflowRow } from '@nexus/shared'
 import { useClientWorkflows, useUpdateWorkflow } from '@/src/hooks/use-workflows'
+import { useMemo, useState } from 'react'
+import { WorkflowEditorSheet } from './workflow-editor'
 
 export default function WorkflowsPage() {
   const { data, isLoading } = useClientWorkflows()
   const update = useUpdateWorkflow()
-  const rows = (data?.data ?? []) as WorkflowRow[]
+  const rows = useMemo(() => (data?.data ?? []) as WorkflowRow[], [data])
+  const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState<WorkflowRow | null>(null)
+
+  const departments = useMemo(() => {
+    const uniq = new Set<string>()
+    rows.forEach((r) => uniq.add(r.department))
+    return Array.from(uniq)
+  }, [rows])
 
   return (
     <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="text-sm font-medium">Workflows</div>
+        <Button
+          onClick={() => {
+            setEditing(null)
+            setOpen(true)
+          }}
+        >
+          <CirclePlusIcon className="size-4" />
+          New Workflow
+        </Button>
       </div>
-      <Table>
+      <Table containerClassName="border-0">
         <TableHeader>
           <TableRow>
             <TableHead>Create Date</TableHead>
             <TableHead>Department</TableHead>
-            <TableHead>Workflow Name</TableHead>
+            <TableHead>Workflow</TableHead>
             <TableHead className="text-right"># Nodes</TableHead>
             <TableHead className="text-right"># Executions</TableHead>
             <TableHead className="text-right"># Exceptions</TableHead>
@@ -145,6 +164,14 @@ export default function WorkflowsPage() {
                       <DropdownMenuItem asChild>
                         <a href={`/workflows/${w.id}`}>View</a>
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setEditing(w)
+                          setOpen(true)
+                        }}
+                      >
+                        Edit
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -153,6 +180,12 @@ export default function WorkflowsPage() {
           )}
         </TableBody>
       </Table>
+      <WorkflowEditorSheet
+        open={open}
+        onOpenChange={setOpen}
+        editing={editing}
+        departments={departments}
+      />
     </div>
   )
 }

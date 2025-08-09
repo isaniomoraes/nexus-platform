@@ -51,6 +51,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Access denied: client_id missing.' }, { status: 403 })
       }
       await supabase.auth.updateUser({ data: { user_role: 'client', client_id: row.client_id } })
+      // Ensure refreshed JWT contains updated claims for RLS
+      await supabase.auth.refreshSession()
     } else if (row?.role === 'se') {
       // Ensure JWT has correct role for RLS before querying clients
       await supabase.auth.updateUser({ data: { user_role: 'se' } })
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
             const allowedIds = byAuth.map((c) => c.id)
             const clientId = selected && allowedIds.includes(selected) ? selected : allowedIds[0]
             await supabase.auth.updateUser({ data: { user_role: 'se', client_id: clientId } })
+            await supabase.auth.refreshSession()
             response.cookies.set({ name: 'current_client_id', value: clientId, path: '/' })
             return response
           }
@@ -101,6 +104,7 @@ export async function POST(request: Request) {
       await supabase.auth.updateUser({
         data: { user_role: 'se', client_id: clientId, assigned_clients: allowedIds },
       })
+      await supabase.auth.refreshSession()
       response.cookies.set({ name: 'current_client_id', value: clientId, path: '/' })
     } else {
       await supabase.auth.signOut()
